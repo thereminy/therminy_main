@@ -5,16 +5,18 @@ import simpleaudio.functionchecks as fc
 
 #BEFORE RUNNING
 #pip install pydub  [documentation: https://github.com/jiaaro/pydub]
-#pip install simpleaudio [documentation: ] 
-
+#pip install simpleaudio
+# then uncomment this line and run it!
 # fc.LeftRightCheck.run()
+
+
 note = AudioSegment.from_wav("note_lib/B_note.wav") #getting .wave file
 print("playing note")
 play(note) #playing wave file
 
 note2 = AudioSegment.from_wav("note_lib/A_note.wav")
 
-#splice songs
+#splice songs!
 second = 1000
 note = note[:1000]
 note2 = note2[:1000]
