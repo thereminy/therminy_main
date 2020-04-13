@@ -1,0 +1,23 @@
+:root {
+    --font: Arial, Helvetica, sans-serif;
+}
+
+h1 {
+    font-family: var(--font);
+    margin-left: 1rem;
+}
+
+audio {
+    display: block;
+    margin-top: 0.5em;
+    font-family: var(--font);
+    padding: 0.5em;
+}
+
+select {
+    margin-left: 1rem;
+    padding: 0.5em;
+    font-family: var(--font);
+    font-size: large;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);s
+}
