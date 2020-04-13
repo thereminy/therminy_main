@@ -1,4 +1,4 @@
-# therminy_main
+# thereminy_main
 
 Theremin-y: Create music with friends by moving your hands
 
