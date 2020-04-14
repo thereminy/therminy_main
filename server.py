@@ -3,13 +3,11 @@ from pydub.playback import play
 import simpleaudio.functionchecks as fc
 import array
 
-
 #BEFORE RUNNING
 #pip install pydub  [documentation: https://github.com/jiaaro/pydub]
 #pip install simpleaudio
 # then uncomment this line and run it!
 #fc.LeftRightCheck.run()
-
 
 note = AudioSegment.from_wav("note_lib/B_note.wav") #getting .wave file
 print("playing note")
@@ -26,10 +24,10 @@ note2 = note2[:1000]
 both = note + note2
 #play(both)
 
-play reverse!
+#play reverse!
 #play(both.reverse())
 
-save results!
+#save results!
 #both.export("both.wav", format="wav")
 
 current_notes = ['A','B','C','D','E','F','G']
@@ -78,12 +76,12 @@ if __name__ == "__main__":
 	# doctest.run_docstring_examples(, globals(), verbose = True)
 	# a = request_handler({'method':'GET', 'values':{'note':'A'}})
 	# print(a)
-	# import simpleaudio as sa
-	# play_obj = sa.play_buffer(a,2, 2, 4)
-	# with open(a, mode='bx') as f:
-	# 	f.write(response)
-	# b = AudioSegment.from_file(file_path)
-	# print(sound._spawn(a))
+	import simpleaudio as sa
+	play_obj = sa.play_buffer(a,2, 2, 4)
+	with open(a, mode='bx') as f:
+		f.write(response)
+	b = AudioSegment.from_file(file_path)
+	print(sound._spawn(a))
 	#scp server.py team091@608dev-2.net:~/	
 	pass
 
