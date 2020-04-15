@@ -2,6 +2,7 @@ from pydub import AudioSegment
 from pydub.playback import play
 import simpleaudio.functionchecks as fc
 import array
+import io
 
 #BEFORE RUNNING
 #pip install pydub  [documentation: https://github.com/jiaaro/pydub]
@@ -31,57 +32,77 @@ both = note + note2
 #both.export("both.wav", format="wav")
 
 current_notes = ['A','B','C','D','E','F','G']
-def request_handler(request):
+def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
 		note  = request['values'].get('note' , None)
 		if note == None:
 			return 'Must contain a note type'
-		### LIBRARY METHODS ##
 
-		#For the server 
-		#file_path = '__HOME__/{}_note.wav'.format(note)
-		# To test locally 
-		file_path = 'note_lib/{}_note.wav'.format(note)
+		# For the server 
+		file_path = '__HOME__/{}_note.wav'.format(note)
 
-		#WAV FORMAT  METHOD
+		# To test Locally 
+		#file_path = 'note_lib/{}_note.wav'.format(note)
+
+		## Raw audio data as an array of numeric samples ##
+
 		audio_note = AudioSegment.from_file(file_path)
-		sound_array = audio_note.get_array_of_samples()
-		array_stream = array.array(audio_note.array_type, sound_array)
+		sample_array = audio_note.get_array_of_samples()
+
+		if test == 'arr_samples':
+			print("Raw audio data:\n", sample_array)
+			return (audio_note, sample_array)
 		
-		# RAW NOTE METHOD 
-		# audio_note = AudioSegment.from_file(file_path)
-		# # returns bytes per sample  
-		# bytes_per_sample = audio_note.sample_width
-		# # returns sample rate 
-		# frames_per_second = audio_note.frame_rate
-		# # returns bit depth
-		# bytes_per_frame = audio_note.frame_width
-		# # audio data in the form of a bytestring 
-		# raw_audio_data = audio_note.raw_data
-		# print(raw_audio_data)
+		## Raw audio library in the form of a bytestring ##
 
-		## NON-LIBRARY METHODS ##
+		audio_note = AudioSegment.from_file(file_path)
+		# returns bytes per sample  
+		bytes_per_sample = audio_note.sample_width
+		# returns sample rate 
+		frames_per_second = audio_note.frame_rate
+		# returns bit depth
+		bytes_per_frame = audio_note.frame_width
+		# audio data in the form of a bytestring 
+		byte_string = audio_note.raw_data
 
-		# BYTE ARRAY METHOD, return byte_array: 
-		# byte_array = array.array('B')
-		# audio_file = open(file_path, 'rb')
-		# byte_array.frombytes(audio_file.read())
-		# audio_file.close()
-		return array_stream
+		if test == 'str_bytes':
+			print("Raw audio data:\n", byte_string)
+			return (audio_note, byte_string)
+
+		## Audio in the form of a byte array ##
+
+		byte_array = array.array('B')
+		audio_note = open(file_path, 'rb')
+		byte_array.frombytes(audio_note.read())
+		audio_note.close()
+
+		if test == 'arr_bytes':
+			print("Arr bytes:\n", byte_array)
+			return (audio_note, byte_array)
+
+		return byte_array
 	return 'Invalid request: must be GET'
 	
 if __name__ == "__main__":
-	# useful for debugging 
-	# import doctest 
-	# doctest.run_docstring_examples(, globals(), verbose = True)
-	# a = request_handler({'method':'GET', 'values':{'note':'A'}})
-	# print(a)
-	import simpleaudio as sa
-	play_obj = sa.play_buffer(a,2, 2, 4)
-	with open(a, mode='bx') as f:
-		f.write(response)
-	b = AudioSegment.from_file(file_path)
-	print(sound._spawn(a))
-	#scp server.py team091@608dev-2.net:~/	
-	pass
+	##  Test numeric samples ##
 
+	# audio_note, numeric_samples = request_handler({'method':'GET', 'values':{'note':'A'}}, 'arr_samples')
+	# play(audio_note._spawn(numeric_samples))
+
+	## Test byte string ##
+
+	# audio_note, raw_audio_data = request_handler({'method':'GET', 'values':{'note':'A'}},'str_bytes')
+	# play(audio_note._spawn(raw_audio_data))
+
+	## Test byte array ## 
+
+	# audio_file, byte_array = request_handler({'method':'GET', 'values':{'note':'A'}}, "arr_bytes")
+	# song = AudioSegment.from_file(io.BytesIO(byte_array), format="wav")
+	# play(song)
+
+	## Server defaults to byte_array 
+
+	#print(request_handler({'method':'GET', 'values':{'note':'A'}}))
+
+	#scp server.py team091@608dev-2.net:~/
+	pass
