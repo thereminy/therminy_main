@@ -6,27 +6,49 @@
 	<title>Theremin-y</title>
   <link rel="stylesheet" href="styles.css">
   <script>
-    function select_note(selection) {
-      document.getElementById("audio").pause();
-      document.getElementById("audio").setAttribute('src', selection);
-      document.getElementById("audio").load();
+    const audio = document.querySelector('audio');
+
+    function updateAudio(note) {
+        let request = new XMLHttpRequest();
+        request.open('GET','https://608dev-2.net/sandbox/sc/team091/server.py?' + note);
+        request.responseType = 'arraybuffer';
+
+        request.onload = function() {
+            console.log(request.response);
+            console.log(request.response.byteLength);
+            playWave(request.response);
+        };
+        request.send();
+    };
+
+    function playWave(byteArray) {
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let myAudioBuffer = audioCtx.createBuffer(1, byteArray.byteLength, 8000);
+        let nowBuffering = myAudioBuffer.getChannelData(0);
+        for (var i = 0; i < byteArray.byteLength; i++) {
+            nowBuffering[i] = byteArray[i];
+        }
+
+        let source = audioCtx.createBufferSource();
+        source.buffer = myAudioBuffer;
+        source.connect(audioCtx.destination);
+        source.start();
     }
   </script>
 </head>
 <body>
     <main>
-      <h1>Theremin-y</h1>
-        <select id="note" onchange="if (this.selectedIndex) select_note(this.value);">
-            <option>Select a note: </option>
-            <option value="https://drive.google.com/uc?id=114LOpP8CdxC81EzLsgEc3YTtrA4BAMaw">A</option>
-            <option value="https://drive.google.com/uc?id=1AGovI20BijKBleDSPoS7jPdmZCGSRpA4">B</option>
-            <option value="https://drive.google.com/uc?id=19fYil-VsCvQlIe_PeFCZusoGg1gJNsFW">C</option>
-            <option value="https://drive.google.com/uc?id=1mxOFz6Gh66NKrHekCorqdwZnElhr3He_">D</option>
-            <option value="https://drive.google.com/uc?id=1kbg5ftBN8veDloYO20nMPXFeDCKUc9vp">E</option>
-            <option value="https://drive.google.com/uc?id=171ororQ9gmlqf-Cic17trgUihF995vIk">F</option>
-            <option value="https://drive.google.com/uc?id=1Ydqeh87N3yZ0i3CDmkzeHfwArfyXHRXv">G</option>
-          </select>
-      <audio id="audio" src="" type="audio/wav" controls></audio>
+        <h1>Theremin-y</h1>
+        <select id="note" name="note" onchange="if (this.selectedIndex) updateAudio(this.value);">
+            <option >Select a note: </option>
+            <option value="note=A">A</option>
+            <option value="note=B">B</option>
+            <option value="note=C">C</option>
+            <option value="note=D">D</option>
+            <option value="note=E">E</option>
+            <option value="note=F">F</option>
+            <option value="note=G">G</option>
+        </select>
     </main>
 </body>
 </html>
