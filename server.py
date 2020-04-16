@@ -10,28 +10,18 @@ import io
 # then uncomment this line and run it!
 #fc.LeftRightCheck.run()
 
-note = AudioSegment.from_wav("note_lib/B_note.wav") #getting .wave file
-print("playing note")
-# play(note) #playing wave file
-
-note2 = AudioSegment.from_wav("note_lib/A_note.wav")
-
-#splice songs!
-second = 1000
-note = note[:1000]
-note2 = note2[:1000]
-
-#add songs together!
-both = note + note2
-#play(both)
-
-#play reverse!
-#play(both.reverse())
-
-#save results!
-#both.export("both.wav", format="wav")
 
 current_notes = ['A','B','C','D','E','F','G']
+
+note_audio = {
+	  'A' : '<audio src="https://drive.google.com/uc?id=114LOpP8CdxC81EzLsgEc3YTtrA4BAMaw" type="audio/wav" controls></audio>',
+      'B': '<audio src="https://drive.google.com/uc?id=1AGovI20BijKBleDSPoS7jPdmZCGSRpA4" type="audio/wav" controls></audio>',
+      'C': '<audio src="https://drive.google.com/uc?id=19fYil-VsCvQlIe_PeFCZusoGg1gJNsFW" type="audio/wav" controls></audio>',
+      'D': '<audio src="https://drive.google.com/uc?id=1mxOFz6Gh66NKrHekCorqdwZnElhr3He_" type="audio/wav" controls></audio>',
+      'E': '<audio src="https://drive.google.com/uc?id=1kbg5ftBN8veDloYO20nMPXFeDCKUc9vp" type="audio/wav" controls></audio>',
+      'F': '<audio src="https://drive.google.com/uc?id=171ororQ9gmlqf-Cic17trgUihF995vIk" type="audio/wav" controls></audio>',
+      'G':'<audio src=https://drive.google.com/uc?id=1Ydqeh87N3yZ0i3CDmkzeHfwArfyXHRXv" type="audio/wav" controls></audio>',
+}
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
 		note  = request['values'].get('note' , None)
@@ -81,7 +71,18 @@ def request_handler(request, test = ''):
 			return (audio_note, byte_array)
 
 		return byte_array
-	return 'Invalid request: must be GET'
+	else:
+		args = request['form']
+		note = args['note']
+
+		try:
+			note_sound = note_audio[note]
+		except KeyError:
+			return "This note is not supported"
+
+		
+
+		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 	
 if __name__ == "__main__":
 	##  Test numeric samples ##
@@ -102,7 +103,8 @@ if __name__ == "__main__":
 
 	## Server defaults to byte_array 
 
-	#print(request_handler({'method':'GET', 'values':{'note':'A'}}))
+	# print(request_handler({'method':'GET', 'values':{'note':'A'}}))
 
 	#scp server.py team091@608dev-2.net:~/
+
 	pass
