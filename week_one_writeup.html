@@ -1,0 +1,583 @@
+<meta charset="utf-8" emacsmode="-*- markdown -*-"> <link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/journal.css?">
+
+**6.08 Team 91 Week 1 Writeup**
+
+# Milestones
+
+Below is how we completed each of our goals: 
+
+## Phototransistor Testing
+
+**Goal:**
+
+* Test how to map measures received by the phototransistor to notes in a piano
+
+**Deliverable:**
+
+* Make plots where we can observe the correlation between distance from a hand to the Phototransistor in different lighting conditions.
+
+To evaluate how the measurements taken from one phototransistor are affected by the distance between an object and the tip of the sensor, we left a stationary object (a hand) at a constant distance from the phototransistor for approximately 2 seconds and gathered the readings in an array. Then, we used this array to plot the measurements in Python and compare it to the readings from other distances. 
+
+For the purpose of reproducibility, we created three different graphs in different locations (specified in their titles). We can observe that the measurements from the phototransistor decrease as an object gets further away from the phototransistor. However, the pattern that dictates how much the measurements decrease is unclear. 
+
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1GZpsk2oWZn5bAF2rBkRfDhXkedMRK7fV">
+    <p style="font-weight: bold;">Graph 1: Measurements in-doors (Puerto Rico)</p>
+
+    <img src="https://drive.google.com/uc?id=1nxNUZbiAz8qvSixu_cuccC666iJF_02w">
+    <p style="font-weight: bold;">Graph 2: Measurements in-doors (Texas)</p>
+
+    <img src="https://drive.google.com/uc?id=1XNYTgHZBuBwWf1tuimioybAW4NjsPN9R">
+    <p style="font-weight: bold;">Graph 3: Measurements out-doors (Puerto Rico)</p>
+</section>
+
+Hence, to search for a pattern, we plotted the average measurements per distance of the three samples. Since the maximum average of each sample ranged from 80-4000, we divided the averages from each sample by the maximum average of its respective sample (normalized).  The resulting graph is shown below:
+
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1zqBNNiKKwFXn-GGUd2YjPNjZNvGvkRTs">
+    <p style="font-weight: bold;">Graph 4: Normalized/average measurements read per distance from Phototransistor</p>
+</section>
+
+
+**Deliverable**
+
+* Establish the optimal distance that a hand should move such that two different notes are distinguishable. Also, based on this result, determine if one Phototransistor would achieve the goal of playing one full octave of a piano. If not, then determine how many Phototransistors should be used in the hardware (worst case, determine if we need Laser Ranging sensor).
+
+* Analyzing Graphs 1-3, we noticed that the optimal number of states that a phototransistor could detect based on the distance a hand is placed above it would be 4. In other words, we propose that a single phototransistor can accurately determine 3 different notes and “no hand presence” based on the distance a hand is placed above the sensor. If more states were added, then there is a chance that the readings measured by the phototransistor can overlap and a specific note cannot be chosen. This can be particularly observed in Graph 2 and Graph 3, where a distance of  0 inches and 1 inch from the phototransistor are clearly separable readings but greater distance starts condensing.
+
+* Since we are proposing that each Phototransistor can detect 3 different notes and there are 12 notes in an octave, we will need 4 phototransistors in the device.
+
+## Hardware Design
+
+**Goal:**
+
+* Propose hardware design of the component that will convert hand position to notes. This will be based on the results from the Phototransistor experiment.
+
+**Deliverable:**
+
+* Hardware design writeup and state diagram. Order parts if needed.
+
+![Diagram of our proposed hardware design](https://drive.google.com/uc?id=1ASlCI60-78rl8pw1oPaqW4GbWUq0uuNf)
+
+All of the parts necessary to implement the hardware design above have been ordered, these include phototransistors, additional breadboards, and wires for each team member.
+
+Based on the results we got from milestone 1, we determined that four phototransistors would be needed to correctly capture all 12 notes. The four phototransistors will be placed on a breadboard as shown in the diagram above. They are all equally spaced out and we will try to have as much space between them as possible to ensure that notes do not overlap between phototransistors. We chose the design above because it allowed us to maximize the amount of notes that each phototransistor can detect while avoiding the nonlinear behavior that the phototransistor exhibits at larger distances.
+
+A single phototransistor is able to differentiate between three different notes along with a “no hand presence” region where there is no note detected. Each of the four phototransistors will be able to identify three notes as depicted in the diagram. Different altitudes will correspond to different notes for each of the phototransistors. In the case where multiple phototransistors are triggered by a hand placement, only one note will be selected based on which has the higher reading. This is to avoid ambiguity as to what note should be played at a particular point in time.
+
+<img src="https://drive.google.com/uc?id=1-dDWiLlqrLCuqaXsmWYeAWUOjGWowdDG">
+<p style="text-align: center; font-weight: bold;">State Diagram for the Hardware System</p>
+
+The state diagram from our initial proposal will be the same one that we use going forward with our new hardware design. The changes in the way that we measure notes will modify the WAIT_RECORD state but will not add any additional states to the system. In WAIT_RECORD, the ESP32 will gather readings from the four phototransistors in the record state. It will take the highest of these values so that it chooses the phototransistor that the user has their hand closest to. We will then perform our note selection process for the chosen phototransistor and record the note that the user intended to play.
+
+**Deliverable:**
+
+* Based on results from milestone 1, establish a mapping of different ranges read from PT to different notes on the server based on the note recording infrastructure that will be selected.
+
+Since we determined that a phototransistor can accurately detect three different notes, we decided that the information that will be sent to the server by the device with the Phototransistor will be a sequence of notes (in future weeks we will add time that the note was played). Hence, the mapping of different ranges read from the Phototransistor to different notes was developed in the Arduino code and is described below.
+
+Notice in Graph 4 that the separate graphs plotted relating the distance between a hand and the tip of a phototransistor to the normalized/average analog reading have a slope of approximately $\frac{m_c - m_u}{d_c - d_u}$, where $m_c$ and $m_u$ are the values at the distance where the Phototransistor is covered $d_c$ and the distance where the Phototransistor is completely uncovered $d_u$. Furthermore, the y-intercept of the graph is $m_c$ because this measure occurs when the Phototransistor is completely covered ($d_c = 0$). Knowing this, we can develop the line-equation $f(x) = (\frac{m_c - m_u}{d_c - d_u})*x + m_c$. Hence, in the arduino code, if the Phototransistor’s measure is greater than $f(x_1)$, then the first note is being played. Otherwise, if the Phototransistor’s measure is greater than $f(x_2)$, then the second note is being played. On the other hand, if the Phototransistor’s measure is greater than $f(x_3)$, then the third note is being played. Finally, if none of these criteria is met, then there is no note being played. Notice that $x_1 < x_2 < x_3$.  
+
+There is one problem with this! To determine $d_u$ we had to do a lot of measures, increasing the distance between the hand to the phototransistor until the reading did not change. Hence, we determined that a tactic to solve this is to use the average reading when the distance between the hand and the sensor is approximately $1$ inch and the average reading when the Phototransistor is completely covered (these measures are gathered in the beginning of the program). Furthermore, by trial and error, we chose $x_1 = 2, x_2 = 4, x_3 = 6$ to create the threshold for the notes. The following video shows the system working and the code can be found in the appendix.
+
+![](https://www.youtube.com/watch?v=NTtOBbeyiBA)
+
+**Deliverable:**
+
+* POST ranges (fake inputs from serial port) to the server using Postman and play corresponding notes on the server. 
+
+Since the device will be sending a sequence of note names to the server, the server should be able to create sounds corresponding to notes being sent. Hence, we implemented code in a server that, when a POST request is received and a single note is sent (“C” for example), the server will play this note. Here is a video with the implementation:
+
+<iframe src="https://drive.google.com/file/d/1IPq8IMdzmpex8C_LXi_fSAb3dtQRlEZk/preview" width="640" height="480"></iframe>
+
+## Front-End & Server-Side
+
+**Goal:**
+
+* Select library/method to get server to play a sound on the frontend
+
+**Deliverable(s):**
+
+* We will have a button in the server that, when clicked, plays the sound of a note on a web page. We will make GET requests to our server using Postman with various notes we want to play/test on the server.
+
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1TUNJtHl-HiqNvhd_KhOQggQTBhfVQZsM">
+    <p style="font-weight: bold;">Webpage that requests notes from server</p>
+</section>
+
+
+* Theremin sample notes were hard to find online, so instead we sampled piano notes A-G from FL studio and converted them into.wav files, which are saved on the server. The pydub and simpleaudio Python libraries were used to process these sounds and play them on the front end. 
+
+* As of right now, the only way to have these notes played on the frontend is to save them on the server. However, as we begin to take in user input to create new sequences of music, it would not be feasible to keep saving files into our server and playing them. 
+
+* To create a more scalable approach, we explored how to create the music files into data streams. We created three main types of data streams and tested them. The first one is the raw audio represented as an array of numeric samples. This method in our library is mainly used for implementing effects. The second one is the raw audio in the form of a byte string. This method in our library is mainly used to interact with other APIs, libraries, and for direct signal processing.  The third one is the raw audio being represented as a byte array. This method was independent from our library. On the server file, we were able to create the sound again from these three different data streams. 
+
+* As a default, our response is a byte array mainly because the HTML we are testing this scalability approach processes data in a byte array format. The JavaScript in the HTML ( https://608dev-2.net/sandbox/sc/team091/thereminy.html ) currently sends a GET request to our server depending on the selected note in a dropdown. It is set to receive a byte array from the server of the wav file from the ESP32 sound sequence. The problem we have right now is that the sound on the web is not correct and it is making clicking sounds not the notes that it requests so we need to figure out how to send the sound data. 
+
+* In the future, we want to take this approach of having the server generate the sequence of music and then serve a byte stream of that audio to the frontend so that it can be played through a button click. We also have this https://608dev-2.net/sandbox/sc/team091/notes.html page to show the various notes playing. 
+
+
+# Code Appendix
+
+Arduino code to test linearity of phototransistor:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void setup() {
+    Serial.begin(115200);
+    //**************************************WIFI CONNECTION*********************************************
+    WiFi.begin(network, password); 
+    Serial.print("Attempting to connect to ");
+    Serial.println(network);
+    
+    uint8_t count = 0; //count used for Wifi check times
+    while (WiFi.status() != WL_CONNECTED && count < 12) {
+      delay(500);
+      Serial.print(".");
+      count++;
+    }
+    delay(2000);
+    if (WiFi.isConnected()) { //if we connected then print our IP, Mac, and SSID we're on
+      Serial.println("CONNECTED!");
+      Serial.println(WiFi.localIP().toString() + " (" + WiFi.macAddress() + ") (" + WiFi.SSID() + ")");
+      delay(500);
+    } else { //if we failed to connect just Try again.
+      Serial.println("Failed to Connect :/  Going to restart");
+      Serial.println(WiFi.status());
+      ESP.restart(); // restart the ESP (proper way)
+    }
+    //****************************************************************************************************
+    
+    tft.init();
+    tft.setRotation(2);
+    tft.setTextSize(1);
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_BLACK, TFT_WHITE); 
+    
+    //pinMode(pwm_channel_1, OUTPUT); 
+    //pinMode(pwm_channel_2, OUTPUT); 
+    timer = millis();
+    timer_sample = millis();
+    state = HAND_COVER;
+    counter = 0;
+    measured = false;
+    average_cover = 0;
+    average_close = 0;
+    region1 = 0;
+    region2 = 0;
+    region3 = 0;
+    changed1 = false;
+    changed2 = false;
+  }
+  
+  void loop() {
+    measure1 = analogRead(A0);
+    sensor1.read(measure1, region1,region2, region3); 
+    FSM(); //currently just Serial.prints it
+  }
+  void FSM(){
+    switch(state){
+      
+      case HAND_COVER:
+        memset(message, 0, sizeof(message));
+        if (millis() - timer <= 6000){ 
+          if(!changed1){
+            tft.fillScreen(TFT_WHITE);
+            tft.setCursor(30, 70, 1); 
+            tft.setTextColor(TFT_BLACK);
+            sprintf(message, "HANDS READY COVER");
+            changed1 = true;
+            changed2 = false;
+          }
+        }
+        else {//after 6 seconds, start recording
+          counter++;
+          average_cover  = (average_cover*(counter-1) + measure1)/counter;
+          Serial.println(average_cover);
+          if(!changed2){
+            tft.fillScreen(TFT_WHITE);
+            tft.setCursor(30, 70, 1); 
+            tft.setTextColor(TFT_BLACK);
+            sprintf(message, "HANDS COVER");
+            changed1 = false;
+            changed2 = true;
+          }
+          
+          if(millis() - timer > 10000){
+            state = HAND_CLOSE;
+            counter = 0;
+            Serial.println("Finished covered! This is average:");
+            Serial.println(average_cover);
+    
+            timer = millis();
+          }
+        }
+        tft.println(message);
+        break;
+  
+      case HAND_CLOSE:
+        memset(message, 0, sizeof(message));
+        
+        if (millis() - timer <= 6000){
+          if(!changed1){
+            tft.fillScreen(TFT_WHITE);
+            tft.setCursor(10, 70, 1); 
+            tft.setTextColor(TFT_BLACK);
+            sprintf(message, "READY HANDS 1 INCH ABOVE");
+            changed1 = true;
+            changed2 = false;
+          }
+        }
+        else{
+          counter++;
+          average_close = (average_close*(counter-1) + measure1)/counter;
+          Serial.println(average_close);
+          if(!changed2){
+            tft.fillScreen(TFT_WHITE);
+            tft.setCursor(30, 70, 1); 
+            tft.setTextColor(TFT_BLACK);
+            sprintf(message, "HANDS 1 INCH ABOVE");
+            changed1 = false;
+            changed2 = true;
+          }
+          if (millis() - timer > 10000){
+            state = GATHER;
+            counter = 0;
+            Serial.println("Finished close! This is average:");
+            Serial.println(average_close);
+            determine_threshold(); //determine thresholds for notes
+          }
+        }
+        tft.println(message);
+        break;
+        
+      //Getting reading from Phototransistor
+      case GATHER:
+        if (millis() - timer_sample > SAMPLE_INTERVAL){ //every half second gather notes
+          timer_sample = millis();
+          if (counter < 225){ //Only picking up first 225 notes! Equivalent to 11 seconds of music
+            memset(message, 0, sizeof(message));
+            counter++;
+            Serial.println(counter);
+            Serial.println(measure1);
+            Serial.println(region1);
+            Serial.println(region2);
+            Serial.println(region3);
+            
+            if (strlen(sample_string) < SAMPLE_SIZE - 50){ //if multiple sensors, gottta loop through all and check presence
+              if (sensor1.hand_present){
+                sprintf(sample_string+strlen(sample_string),"%d,%s&",sensor1.ID, sensor1.note); //add information of when the note was played
+                tft.fillScreen(TFT_WHITE);
+                tft.setCursor(40, 70, 1); 
+                tft.setTextColor(TFT_BLACK);
+                sprintf(message, "%s", sensor1.note);
+                tft.println(message);
+              }
+              else{
+                tft.fillScreen(TFT_WHITE);
+                tft.setCursor(30, 70, 1); 
+                tft.setTextColor(TFT_BLACK);
+                sprintf(message, "No Note");
+                tft.println(message);
+              }
+              
+              
+            }
+          }
+          else{
+            state = PRINT;
+          }
+        }
+        break;
+  
+      //Send to server. Currenlty not used
+      case SEND:
+        memset(body, 0, 2000);
+        sprintf(body,"{\"name\": \"First attempt\", \"sample\":\"%s\"}", sample_string);
+        body_len = strlen(body);
+        sprintf(request_buffer,"POST /sandbox/sc/gustxsr/phototransistor_test/phototransistor_GET.py HTTP/1.1\r\n");
+        strcat(request_buffer,"Host: 608dev-2.net\r\n");
+        strcat(request_buffer,"Content-Type: application/json\r\n");
+        sprintf(request_buffer+strlen(request_buffer),"Content-Length: %d\r\n", body_len); 
+        strcat(request_buffer,"\r\n"); 
+        strcat(request_buffer,body); 
+        strcat(request_buffer,"\r\n"); 
+        
+        do_http_request("608dev-2.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+        Serial.println(response_buffer); 
+        
+        state = STOP;
+        break;
+  
+      case STOP:
+        break;
+  
+      case PRINT:
+        Serial.println(sample_string);
+        state = STOP;
+    }
+  }
+  
+  //Function used to determine the threshold of each note
+  void determine_threshold(){
+    region1 = average_cover - 20;//assumption
+    region2 = 2*(average_close-average_cover) + average_cover; 
+    region3 = 4*(average_close-average_cover) + average_cover;
+    Serial.println(average_cover);
+    Serial.println(average_close);
+    Serial.println(region1);
+    Serial.println(region2);
+    Serial.println(region3);
+  }
+
+  //Phototransistor Class
+class Phototransistor{
+  public:
+    uint32_t final_trigger;
+    uint32_t initial_trigger;
+    char note[10];
+    bool hand_present;
+    int ID;
+    
+    Phototransistor(int id) {
+      memset(note, 0, sizeof(note));
+      ID = id;
+      final_trigger = millis();
+      initial_trigger = millis();
+      hand_present = false;
+    }
+
+  //Determine which distance from the three levels
+  void read(uint16_t sample, float threshold1, float threshold2, float threshold3) { //FIX THE THRESHOLD REPRESENTATION
+    memset(note, 0, sizeof(note));
+    
+    if (sample >= threshold1){
+      strcpy(note, "C");
+      hand_present = true;
+    }
+    else if (sample >= threshold2){
+      strcpy(note, "D");
+      hand_present = true;
+    }
+    else if(sample >= threshold3){
+      strcpy(note, "E");
+      hand_present = true;
+    }
+    else{
+      hand_present = false;
+    }
+  }
+};
+  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The server-side python script:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+from pydub import AudioSegment
+from pydub.playback import play
+import simpleaudio.functionchecks as fc
+import array
+import io
+ 
+#BEFORE RUNNING
+#pip install pydub  [documentation: https://github.com/jiaaro/pydub]
+#pip install simpleaudio
+# then uncomment this line and run it!
+#fc.LeftRightCheck.run()
+ 
+ 
+current_notes = ['A','B','C','D','E','F','G']
+ 
+note_audio = {
+      'A' : '<audio src="https://drive.google.com/uc?id=114LOpP8CdxC81EzLsgEc3YTtrA4BAMaw" type="audio/wav" controls></audio>',
+      'B': '<audio src="https://drive.google.com/uc?id=1AGovI20BijKBleDSPoS7jPdmZCGSRpA4" type="audio/wav" controls></audio>',
+      'C': '<audio src="https://drive.google.com/uc?id=19fYil-VsCvQlIe_PeFCZusoGg1gJNsFW" type="audio/wav" controls></audio>',
+      'D': '<audio src="https://drive.google.com/uc?id=1mxOFz6Gh66NKrHekCorqdwZnElhr3He_" type="audio/wav" controls></audio>',
+      'E': '<audio src="https://drive.google.com/uc?id=1kbg5ftBN8veDloYO20nMPXFeDCKUc9vp" type="audio/wav" controls></audio>',
+      'F': '<audio src="https://drive.google.com/uc?id=171ororQ9gmlqf-Cic17trgUihF995vIk" type="audio/wav" controls></audio>',
+      'G':'<audio src=https://drive.google.com/uc?id=1Ydqeh87N3yZ0i3CDmkzeHfwArfyXHRXv" type="audio/wav" controls></audio>',
+}
+def request_handler(request, test = ''):
+    if request['method'] ==  'GET':
+        note  = request['values'].get('note' , None)
+        if note == None:
+            return 'Must contain a note type'
+ 
+        # For the server 
+        file_path = '__HOME__/{}_note.wav'.format(note)
+ 
+        # To test Locally 
+        #file_path = 'note_lib/{}_note.wav'.format(note)
+ 
+        ## Raw audio data as an array of numeric samples ##
+ 
+        audio_note = AudioSegment.from_file(file_path)
+        sample_array = audio_note.get_array_of_samples()
+ 
+        if test == 'arr_samples':
+            print("Raw audio data:\n", sample_array)
+            return (audio_note, sample_array)
+        
+        ## Raw audio library in the form of a bytestring ##
+ 
+        audio_note = AudioSegment.from_file(file_path)
+        # returns bytes per sample  
+        bytes_per_sample = audio_note.sample_width
+        # returns sample rate 
+        frames_per_second = audio_note.frame_rate
+        # returns bit depth
+        bytes_per_frame = audio_note.frame_width
+        # audio data in the form of a bytestring 
+        byte_string = audio_note.raw_data
+ 
+        if test == 'str_bytes':
+            print("Raw audio data:\n", byte_string)
+            return (audio_note, byte_string)
+ 
+        ## Audio in the form of a byte array ##
+ 
+        byte_array = array.array('B')
+        audio_note = open(file_path, 'rb')
+        byte_array.frombytes(audio_note.read())
+        audio_note.close()
+ 
+        if test == 'arr_bytes':
+            print("Arr bytes:\n", byte_array)
+            return (audio_note, byte_array)
+ 
+        return byte_array
+    else:
+        args = request['form']
+        note = args['note']
+ 
+        try:
+            note_sound = note_audio[note]
+        except KeyError:
+            return "This note is not supported"
+ 
+        
+ 
+        return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
+    
+if __name__ == "__main__":
+    ##  Test numeric samples ##
+ 
+    # audio_note, numeric_samples = request_handler({'method':'GET', 'values':{'note':'A'}}, 'arr_samples')
+    # play(audio_note._spawn(numeric_samples))
+ 
+    ## Test byte string ##
+ 
+    # audio_note, raw_audio_data = request_handler({'method':'GET', 'values':{'note':'A'}},'str_bytes')
+    # play(audio_note._spawn(raw_audio_data))
+ 
+    ## Test byte array ## 
+ 
+    # audio_file, byte_array = request_handler({'method':'GET', 'values':{'note':'A'}}, "arr_bytes")
+    # song = AudioSegment.from_file(io.BytesIO(byte_array), format="wav")
+    # play(song)
+ 
+    ## Server defaults to byte_array 
+ 
+    # print(request_handler({'method':'GET', 'values':{'note':'A'}}))
+ 
+    #scp server.py team091@608dev-2.net:~/
+ 
+    pass
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HTML code that sends GET request to server for byte arrays to play sequences: 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Theremin-y</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    const audio = document.querySelector('audio');
+
+    function updateAudio(note) {
+        let request = new XMLHttpRequest();
+        request.open('GET','https://608dev-2.net/sandbox/sc/team091/server.py?' + note);
+        request.responseType = 'arraybuffer';
+
+        request.onload = function() {
+            console.log(request.response);
+            console.log(request.response.byteLength);
+            playWave(request.response);
+        };
+        request.send();
+    };
+
+    function playWave(byteArray) {
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let myAudioBuffer = audioCtx.createBuffer(1, byteArray.byteLength, 8000);
+        let nowBuffering = myAudioBuffer.getChannelData(0);
+        for (var i = 0; i < byteArray.byteLength; i++) {
+            nowBuffering[i] = byteArray[i];
+        }
+
+        let source = audioCtx.createBufferSource();
+        source.buffer = myAudioBuffer;
+        source.connect(audioCtx.destination);
+        source.start();
+    }
+  </script>
+</head>
+<body>
+    <main>
+        <h1>Theremin-y</h1>
+        <select id="note" name="note" onchange="if (this.selectedIndex) updateAudio(this.value);">
+            <option >Select a note: </option>
+            <option value="note=A">A</option>
+            <option value="note=B">B</option>
+            <option value="note=C">C</option>
+            <option value="note=D">D</option>
+            <option value="note=E">E</option>
+            <option value="note=F">F</option>
+            <option value="note=G">G</option>
+        </select>
+    </main>
+</body>
+</html>
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HTML Code to spoof ESP32 POST requests and receive sound to play : 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Theremin-y</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main>
+      <h1>Theremin-y</h1>
+      <form action="server.py" method="post">
+        <select id="note" name="note">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+        </select>
+        <input type="submit">
+    </form>
+    </main>
+</body>
+</html>
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+<style class="fallback">body{visibility:hidden}</style><script>markdeepOptions={tocStyle:'auto'};</script>
+<!-- Markdeep: --><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?" charset="utf-8"></script>
