@@ -83,7 +83,33 @@ def request_handler(request, test = ''):
 		
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
+
+def parse_string(req):
+	"""
+	:param req: str in the form of note-time-&-note-time-&note-time
 	
+	Things to note: 
+		- note-time : the note is being playing for duration of time
+		- 'S' represents silence
+		- time is in milliseconds
+	"""
+	# initializes a zero duration Audio Segment 
+	user_sound = AudioSegment.empty()
+	# list of lists in the form of [[note,time], [note,time],[note,time]]
+	notes_times = [ pair.split(",") for pair in req.split('&')]
+
+	for nt in notes_times:
+		note = nt[0]
+		time = float(nt[1])
+		if note == 'S':
+			# how to add silence: time parameter is in milliseconds
+			user_sound+= AudioSegment.silent(time)
+		else: 
+			file_path = "note_lib/{}_note.wav".format(note)
+			user_sound += AudioSegment.from_wav(file_path)[:time]
+
+	return user_sound
+
 if __name__ == "__main__":
 	##  Test numeric samples ##
 
@@ -105,6 +131,8 @@ if __name__ == "__main__":
 
 	# print(request_handler({'method':'GET', 'values':{'note':'A'}}))
 
-	#scp server.py team091@608dev-2.net:~/
+	## To play a parsed string 
+
+	#play(parse_string("A,100&S,10000&B,100&C,3000"))
 
 	pass
