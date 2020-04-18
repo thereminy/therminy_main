@@ -71,26 +71,24 @@ def request_handler(request, test = ''):
 			print("Arr bytes:\n", byte_array)
 			return (audio_note, byte_array)
 
-		return byte_array
+		# user song file path being played
+		user_song_path = "var/jail/home/team091/user_song.wav"
+		return user_song_path
 	else:
-		# args = request['form']
-		# note = args['note']
+		args = request['form']
+		note = args['note']
 
-		# try:
-		# 	note_sound = note_audio[note]
-		# except KeyError:
-		# 	return "This note is not supported"
+		try:
+			note_sound = note_audio[note]
+		except KeyError:
+			return "This note is not supported"
 
 		# POST request from ESP32 
-
 		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
 		#new_song_file.export("user_song.wav", format="wav")
-		server_path = "var/jail/home/team091/user_song.wav"
 
-		return server_path
-
-		#return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
+		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 
 def string_to_file(req):
 	"""
