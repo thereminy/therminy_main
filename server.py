@@ -83,14 +83,14 @@ def request_handler(request, test = ''):
 
 		# POST request from ESP32 
 
-		song_sequence = form['song']
+		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 
 def string_to_file(req):
 	"""
-	:param req: str in the form of note-time-&-note-time-&note-time
+	:param req: str in the form of notetime&notetime&notetime
 	
 	Things to note: 
 		- note-time : the note is being playing for duration of time
