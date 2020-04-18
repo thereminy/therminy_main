@@ -22,6 +22,7 @@ note_audio = {
       'F': '<audio src="https://drive.google.com/uc?id=171ororQ9gmlqf-Cic17trgUihF995vIk" type="audio/wav" controls></audio>',
       'G':'<audio src=https://drive.google.com/uc?id=1Ydqeh87N3yZ0i3CDmkzeHfwArfyXHRXv" type="audio/wav" controls></audio>',
 }
+
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
 		note  = request['values'].get('note' , None)
@@ -80,11 +81,14 @@ def request_handler(request, test = ''):
 		except KeyError:
 			return "This note is not supported"
 
-		
+		# POST request from ESP32 
+
+		song_sequence = form['song']
+		new_song_file = string_to_file(song_sequence)
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 
-def parse_string(req):
+def string_to_file(req):
 	"""
 	:param req: str in the form of note-time-&-note-time-&note-time
 	
@@ -92,6 +96,8 @@ def parse_string(req):
 		- note-time : the note is being playing for duration of time
 		- 'S' represents silence
 		- time is in milliseconds
+
+	Returns an AudioSegment object 
 	"""
 	# initializes a zero duration Audio Segment 
 	user_sound = AudioSegment.empty()
@@ -133,6 +139,6 @@ if __name__ == "__main__":
 
 	## To play a parsed string 
 
-	#play(parse_string("A,100&S,10000&B,100&C,3000"))
+	#play(string_to_file("A,100&S,100&B,100&C,3000"))
 
 	pass
