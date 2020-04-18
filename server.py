@@ -72,7 +72,7 @@ def request_handler(request, test = ''):
 			return (audio_note, byte_array)
 
 		# user song file path being played
-		user_song_path = "var/jail/home/team091/user_song.wav"
+		user_song_path = "__HOME__/user_song.wav"
 		return user_song_path
 	else:
 		args = request['form']
