@@ -73,27 +73,31 @@ def request_handler(request, test = ''):
 
 		return byte_array
 	else:
-		args = request['form']
-		note = args['note']
+		# args = request['form']
+		# note = args['note']
 
-		try:
-			note_sound = note_audio[note]
-		except KeyError:
-			return "This note is not supported"
+		# try:
+		# 	note_sound = note_audio[note]
+		# except KeyError:
+		# 	return "This note is not supported"
 
 		# POST request from ESP32 
 
 		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
+		#new_song_file.export("user_song.wav", format="wav")
+		server_path = "var/jail/home/team091/user_song.wav"
 
-		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
+		return server_path
+
+		#return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 
 def string_to_file(req):
 	"""
 	:param req: str in the form of notetime&notetime&notetime
 	
 	Things to note: 
-		- note-time : the note is being playing for duration of time
+		- notetime : the note is being playing for duration of time
 		- 'S' represents silence
 		- time is in milliseconds
 
@@ -138,7 +142,9 @@ if __name__ == "__main__":
 	# print(request_handler({'method':'GET', 'values':{'note':'A'}}))
 
 	## To play a parsed string 
-
-	#play(string_to_file("A,100&S,100&B,100&C,3000"))
+	# new_song = string_to_file("A,100&S,100&B,100&C,3000")
+	# play(new_song)
+	# # how to export 
+	# new_song.export("user_song.wav", format="wav")
 
 	pass
