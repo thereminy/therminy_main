@@ -87,9 +87,7 @@ def request_handler(request, test = ''):
 			<body>
 			  <h1>Audio Below</h1>
 			  <p>Below is an audio encoded in base64.</p>
-			  <audio id="Test_Audio" controls> 
-			  	<source src="data:image/wav;base64, {}" alt="Red dot">
-			  </audio> 
+			  <audio controls = "controls" src="data:audio/wav;base64, {}" alt="Red dot"/>
 			</body>
 			</html>
 			   """.format(b64_encoded.decode("utf-8") ) #need that decode so the string we return is treated as string not bytestring
