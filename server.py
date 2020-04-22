@@ -7,6 +7,7 @@ import base64
 import requests
 import sqlite3
 import datetime
+import time
 #import base32
 
 #BEFORE RUNNING
@@ -104,12 +105,11 @@ def request_handler(request, test = ''):
 		# POST request from ESP32 
 		new_song_file = string_to_file(song_sequence)
 		
-		time_posted = datetime.datetime.now()
-		filename = "song_{}.wav".format(str(time_posted))
+		filename = "song_{}.wav".format(str(time.time()))
 		new_song_file.export(filename, format="wav")
 		conn = sqlite3.connect(songs_db)
 		c = conn.cursor()
-		c.execute('''INSERT into song_table VALUES (?,?);''', (filename, time_posted))
+		c.execute('''INSERT into song_table VALUES (?,?);''', (filename, datetime.datetime.now()))
 		conn.commit()  # commit commands
 		conn.close()  # close connection to database
 
@@ -139,7 +139,7 @@ def string_to_file(req):
 			# how to add silence: time parameter is in milliseconds
 			user_sound+= AudioSegment.silent(time)
 		else: 
-			file_path = "note_lib/{}_note.wav".format(note)
+			file_path = "__HOME__/note_lib/{}_note.wav".format(note)
 			user_sound += AudioSegment.from_wav(file_path)[:time]
 
 	return user_sound
