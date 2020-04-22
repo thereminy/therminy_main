@@ -20,17 +20,8 @@ songs_db = '__HOME__/songs.db'
 # songs_db = "songs.db"
 
 
-current_notes = ['A','B','C','D','E','F','G']
+current_notes = {'A','B','C','D','E','F','G'}
 
-note_audio = {
-	  'A' : '<audio src="https://drive.google.com/uc?id=114LOpP8CdxC81EzLsgEc3YTtrA4BAMaw" type="audio/wav" controls></audio>',
-      'B': '<audio src="https://drive.google.com/uc?id=1AGovI20BijKBleDSPoS7jPdmZCGSRpA4" type="audio/wav" controls></audio>',
-      'C': '<audio src="https://drive.google.com/uc?id=19fYil-VsCvQlIe_PeFCZusoGg1gJNsFW" type="audio/wav" controls></audio>',
-      'D': '<audio src="https://drive.google.com/uc?id=1mxOFz6Gh66NKrHekCorqdwZnElhr3He_" type="audio/wav" controls></audio>',
-      'E': '<audio src="https://drive.google.com/uc?id=1kbg5ftBN8veDloYO20nMPXFeDCKUc9vp" type="audio/wav" controls></audio>',
-      'F': '<audio src="https://drive.google.com/uc?id=171ororQ9gmlqf-Cic17trgUihF995vIk" type="audio/wav" controls></audio>',
-      'G':'<audio src=https://drive.google.com/uc?id=1Ydqeh87N3yZ0i3CDmkzeHfwArfyXHRXv" type="audio/wav" controls></audio>',
-}
 
 
 def create_database():
@@ -94,6 +85,10 @@ def request_handler(request, test = ''):
 		c = conn.cursor()
 
 		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()
+		
+		if filename is None:
+			return "No song files have been stored"
+		
 		user_song_path = "__HOME__/{}".format(filename)
 
 		conn.commit()
