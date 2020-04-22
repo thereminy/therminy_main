@@ -3,6 +3,8 @@ from pydub.playback import play
 import simpleaudio.functionchecks as fc
 import array
 import io
+import base64
+#import base32
 
 #BEFORE RUNNING
 #pip install pydub  [documentation: https://github.com/jiaaro/pydub]
@@ -25,55 +27,57 @@ note_audio = {
 
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
-		note  = request['values'].get('note' , None)
-		if note == None:
-			return 'Must contain a note type'
+		# note  = request['values'].get('note' , None)
+		# if note == None:
+		# 	return 'Must contain a note type'
 
 		# For the server 
-		file_path = '__HOME__/{}_note.wav'.format(note)
+		#file_path = '__HOME__/{}_note.wav'.format(note)
 
 		# To test Locally 
 		#file_path = 'note_lib/{}_note.wav'.format(note)
 
 		## Raw audio data as an array of numeric samples ##
 
-		audio_note = AudioSegment.from_file(file_path)
-		sample_array = audio_note.get_array_of_samples()
+		# audio_note = AudioSegment.from_file(file_path)
+		# sample_array = audio_note.get_array_of_samples()
 
-		if test == 'arr_samples':
-			print("Raw audio data:\n", sample_array)
-			return (audio_note, sample_array)
+		# if test == 'arr_samples':
+		# 	print("Raw audio data:\n", sample_array)
+		# 	return (audio_note, sample_array)
 		
-		## Raw audio library in the form of a bytestring ##
+		# ## Raw audio library in the form of a bytestring ##
 
-		audio_note = AudioSegment.from_file(file_path)
-		# returns bytes per sample  
-		bytes_per_sample = audio_note.sample_width
-		# returns sample rate 
-		frames_per_second = audio_note.frame_rate
-		# returns bit depth
-		bytes_per_frame = audio_note.frame_width
-		# audio data in the form of a bytestring 
-		byte_string = audio_note.raw_data
+		# audio_note = AudioSegment.from_file(file_path)
+		# # returns bytes per sample  
+		# bytes_per_sample = audio_note.sample_width
+		# # returns sample rate 
+		# frames_per_second = audio_note.frame_rate
+		# # returns bit depth
+		# bytes_per_frame = audio_note.frame_width
+		# # audio data in the form of a bytestring 
+		# byte_string = audio_note.raw_data
 
-		if test == 'str_bytes':
-			print("Raw audio data:\n", byte_string)
-			return (audio_note, byte_string)
+		# if test == 'str_bytes':
+		# 	print("Raw audio data:\n", byte_string)
+		# 	return (audio_note, byte_string)
 
-		## Audio in the form of a byte array ##
+		# ## Audio in the form of a byte array ##
 
-		byte_array = array.array('B')
-		audio_note = open(file_path, 'rb')
-		byte_array.frombytes(audio_note.read())
-		audio_note.close()
+		# byte_array = array.array('B')
+		# audio_note = open(file_path, 'rb')
+		# byte_array.frombytes(audio_note.read())
+		# audio_note.close()
 
-		if test == 'arr_bytes':
-			print("Arr bytes:\n", byte_array)
-			return (audio_note, byte_array)
+		# if test == 'arr_bytes':
+		# 	print("Arr bytes:\n", byte_array)
+		# 	return (audio_note, byte_array)
 
 		# user song file path being played
 		user_song_path = "__HOME__/user_song.wav"
-		return user_song_path
+		song = open(user_song_path, 'rb')
+		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
+		return b64_encoded.decode("utf-8")
 	else:
 		args = request['form']
 		note = args['note']
@@ -86,7 +90,7 @@ def request_handler(request, test = ''):
 		# POST request from ESP32 
 		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
-		#new_song_file.export("user_song.wav", format="wav")
+
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 
@@ -140,9 +144,13 @@ if __name__ == "__main__":
 	# print(request_handler({'method':'GET', 'values':{'note':'A'}}))
 
 	## To play a parsed string 
-	# new_song = string_to_file("A,100&S,100&B,100&C,3000")
-	# play(new_song)
-	# # how to export 
-	# new_song.export("user_song.wav", format="wav")
+	#new_song = string_to_file("A,100&S,100&B,100&C,3000")
+	#play(new_song)
+	#song_open = open(new_song., 'rb') 
+	#b64_encoded= base64.encodebytes(new_song.raw_data) #read image and encode it into base64
+	#print(b64_encoded)
+	# # # how to export 
+	# #new_song.export("user_song.wav", format="wav")
+	#AudioSegment.from_file('note_lib/user_song.wav').raw_data
 
 	pass
