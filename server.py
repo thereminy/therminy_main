@@ -85,7 +85,7 @@ def request_handler(request, test = ''):
 		c = conn.cursor()
 
 		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()
-		
+
 		if filename is None:
 			return "No song files have been stored"
 		
@@ -101,11 +101,6 @@ def request_handler(request, test = ''):
 		args = request['form']
 		note = args['note']
 
-		try:
-			note_sound = note_audio[note]
-		except KeyError:
-			return "This note is not supported"
-
 		# POST request from ESP32 
 		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
@@ -119,7 +114,7 @@ def request_handler(request, test = ''):
 		conn.commit()  # commit commands
 		conn.close()  # close connection to database
 
-		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
+		return "Song added to the database!"
 
 
 def string_to_file(req):
