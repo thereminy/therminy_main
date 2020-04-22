@@ -89,7 +89,12 @@ def request_handler(request, test = ''):
 		# 	return (audio_note, byte_array)
 
 		# user song file path being played
-		user_song_path = "__HOME__/user_song.wav"
+		conn = sqlite3.connect(songs_db)
+		c = conn.cursor()
+
+		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()
+
+		user_song_path = "__HOME__/{}".format(filename)
 		song = open(user_song_path, 'rb')
 		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
 		return b64_encoded.decode("utf-8")
@@ -108,8 +113,6 @@ def request_handler(request, test = ''):
 
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
-
-
 
 
 def string_to_file(req):
