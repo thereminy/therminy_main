@@ -77,20 +77,7 @@ def request_handler(request, test = ''):
 		user_song_path = "__HOME__/user_song.wav"
 		song = open(user_song_path, 'rb')
 		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
-		# .format(b64_encoded.decode("utf-8") ) #need that decode so the string we return is treated as string not bytestring
-		return """
-			<!DOCTYPE html>
-			<html>
-			<head>
-			  <title>Practice Title</title>
-			</head>
-			<body>
-			  <h1>Audio Below</h1>
-			  <p>Below is an audio encoded in base64.</p>
-			  <audio controls = "controls" src="data:audio/wav;base64, {}" alt="Red dot"/>
-			</body>
-			</html>
-			   """.format(b64_encoded.decode("utf-8") ) #need that decode so the string we return is treated as string not bytestring
+		return b64_encoded.decode("utf-8")
 	else:
 		args = request['form']
 		note = args['note']
