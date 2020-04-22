@@ -99,10 +99,9 @@ def request_handler(request, test = ''):
 		return b64_encoded.decode("utf-8")
 	else:
 		args = request['form']
-		note = args['note']
+		song_sequence = args['song']
 
 		# POST request from ESP32 
-		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
 		
 		time_posted = datetime.datetime.now()
