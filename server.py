@@ -4,6 +4,8 @@ import simpleaudio.functionchecks as fc
 import array
 import io
 import base64
+import requests
+import sqlite3
 #import base32
 
 #BEFORE RUNNING
@@ -11,6 +13,10 @@ import base64
 #pip install simpleaudio
 # then uncomment this line and run it!
 #fc.LeftRightCheck.run()
+
+
+songs_db = '__HOME__/songs.db'
+# songs_db = "songs.db"
 
 
 current_notes = ['A','B','C','D','E','F','G']
@@ -24,6 +30,15 @@ note_audio = {
       'F': '<audio src="https://drive.google.com/uc?id=171ororQ9gmlqf-Cic17trgUihF995vIk" type="audio/wav" controls></audio>',
       'G':'<audio src=https://drive.google.com/uc?id=1Ydqeh87N3yZ0i3CDmkzeHfwArfyXHRXv" type="audio/wav" controls></audio>',
 }
+
+
+def create_database():
+    conn = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
+    c = conn.cursor()  # move cursor into database (allows us to execute commands)
+    c.execute('''CREATE TABLE song_table (filename text,timing timestamp );''') # run a CREATE TABLE command
+    conn.commit() # commit commands
+    conn.close() # close connection to database
+
 
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
@@ -93,6 +108,9 @@ def request_handler(request, test = ''):
 
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
+
+
+
 
 def string_to_file(req):
 	"""
