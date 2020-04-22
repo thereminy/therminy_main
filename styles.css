@@ -7,7 +7,9 @@ h1 {
     margin-left: 1rem;
 }
 
-select {
+button {
+    display: block;
+    margin-top: 1rem;
     margin-left: 1rem;
     padding: 0.5em;
     font-family: var(--font);
