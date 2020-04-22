@@ -6,6 +6,7 @@ import io
 import base64
 import requests
 import sqlite3
+import datetime
 #import base32
 
 #BEFORE RUNNING
@@ -94,6 +95,8 @@ def request_handler(request, test = ''):
 
 		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()
 
+		conn.commit()  # commit commands
+        conn.close()  # close connection to database
 		user_song_path = "__HOME__/{}".format(filename)
 		song = open(user_song_path, 'rb')
 		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
@@ -110,7 +113,15 @@ def request_handler(request, test = ''):
 		# POST request from ESP32 
 		song_sequence = request['form']['song']
 		new_song_file = string_to_file(song_sequence)
-
+		
+		time_posted = datetime.datetime.now()
+		filename = "song_{}.wav".format(str(time_posted))
+		new_song_file.export(filename, format="wav")
+		conn = sqlite3.connect(songs_db)
+		c = conn.cursor()
+		c.execute('''INSERT into song_table VALUES (?,?);''', (filename, time_posted))
+		conn.commit()  # commit commands
+		conn.close()  # close connection to database
 
 		return """<!DOCTYPE html><html>{}</html>""".format(note_sound)
 
