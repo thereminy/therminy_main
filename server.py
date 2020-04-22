@@ -94,10 +94,11 @@ def request_handler(request, test = ''):
 		c = conn.cursor()
 
 		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()
-
-		conn.commit()  # commit commands
-        conn.close()  # close connection to database
 		user_song_path = "__HOME__/{}".format(filename)
+
+		conn.commit()
+		conn.close()
+
 		song = open(user_song_path, 'rb')
 		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
 		return b64_encoded.decode("utf-8")
