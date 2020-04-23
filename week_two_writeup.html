@@ -1,0 +1,500 @@
+<meta charset="utf-8" emacsmode="-*- markdown -*-"> <link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/journal.css?">
+
+**6.08 Team 91 Week 2 Writeup**
+
+# Milestones
+
+Below is how we completed each of our goals: 
+
+##  Constructing Sequence of Notes
+
+**Goal:**
+
+* Construct a sequence of different notes with varying durations
+
+**Deliverable:**
+
+* Parse a spoofed POST request [ampersand-separated (note,duration)] on the server. The server will combine the various notes with the specified duration and create a .wav file locally. The generated file will be played locally. 
+
+<iframe src="https://drive.google.com/file/d/1VLvK80-tfuqoB11dqYfgYOwSe90y0Ibs/preview" width="640" height="480"></iframe>
+
+
+The sequence of notes was constructed using the library we have. We basically split the ‘&’, and this leaves us with ‘note,duration’ values in a list. We create a list out of all these string objects by splitting on the ‘,’. 
+
+Now, we have a list of lists. In these lists, it represents the [note we want to play, duration of the note]. An important thing to note is that we want to have silence in our music. So, we created a system such that ‘S’ stands for silence.
+
+When we receive an input in the form mentioned, we want to create a file out of it, so we create a new file. 
+
+After this, we loop through the list. We check if the note is ‘S’, if it is, then we add silence to our new file with the duration specified. If it is not ‘S’, then we play the note for the specified time.
+
+Then this creates a new file with our music! We store this new music file locally and upload it to the server to be used later by the HTML. 
+
+
+
+## Playing Audio in Frontend
+
+**Goal:**
+
+* Store audio files on the server, and have the frontend request and play the sound file
+
+**Deliverable:**
+
+* We will create a database with file paths on the server and timestamps of when the sound file was created. We will order this most recent - last recent.The HTML will render the last thing on the database given the timestamp. Then, the server will return the file based off the given file path on the database and play it. We will save the files locally then upload it to the server in order for the server to have access to the music file processed in the Python file.
+
+
+<iframe src="https://drive.google.com/file/d/1rUFxOG5XQMJzgLI30X_9tzPIbDDu5pFd/preview" width="640" height="480"></iframe>
+
+We created a database called songs.db that is on the 6.08 server that has two fields: the filename on the server and a timestamp. The point of the timestamp is to retrieve the latest file to be played on the webpage. We spoofed ESP32 POST requests with notes and durations to create .wav files that were added to the database and server. The .wav file is saved locally, so we have to scp the file to the server manually. 
+
+The HTML has a button that when clicked makes a GET request to our server. The server then looks up the last sound filename saved on the server based on the timestamp. With this filename the server opens the corresponding sound file on the server and encodes it in base64. The webpage takes this base64 encoded sound file and returns a decoded base64 sound file string to the HTML. Finally, the HTML string changes the source of the audio to the base64 decoded sound file returned from the server. 
+
+For the future, our goal is to create this process automatically as it is a hassle manually scp everytime we want to create a song.
+
+## Integrating note duration
+
+**Goal:**
+ * Integrate the IMU to select the duration of notes
+
+**Deliverable:**
+* Show the char array that will be posted to the server that includes the duration of the notes. 
+
+The char array will be composed of note-duration pairs separated by an &: 
+(note1,duration1&note2,duration2&…)
+We will use a predetermined beats-per-minute by which the user will guide themself to shake the IMU and determine the duration of a note. The duration of the notes will be the standard (whole notes, half notes, quarter notes, etc). 
+
+For this deliverable, we allowed for four different types of notes: quarter notes, half notes, three-quarters note, and whole note. The duration of a whole note in our example is one second while the durations of the other notes are according to the corresponding fractions. We will also only be using a single note (C) in this example for which we will assign a specific duration. The code we wrote will generate an output string that is of the note,duration form we stated before. 
+
+To generate the output string, we will use the IMU to designate durations for each note. We did this using an FSM approach following the diagram shown below.
+
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1lzN4lKF5AJ9AZ1oH1uodh_dt0IrBdogp">
+    <p style="font-weight: bold;">Plot of “Happy Birthday” Notes</p>
+</section>
+
+![](https://youtu.be/Ie4jmBexbbE)
+
+Now that we have demonstrated how to generate the output string of note,duration pairs that we will send from the ESP32, we will now visualize these to show a sequence of notes with their respective durations. We will use a hardcoded data string as we do not yet have communication between the ESP32 and the python server side. Below is a plot showing the first few notes of the song “Happy Birthday” song.
+
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1YvS6cUib5-HEGVCheQ4_qw9pc-BLWgUT">
+    <p style="font-weight: bold;">Plot of “Happy Birthday” Notes</p>
+</section>
+
+
+
+This string represents the above plot: "C,750&C,250&D,1000&C,1000&F,1000&E,1000&C,750&C,250&D,1000&C,1000&F,1000&E,1000&"
+
+The plot takes the data string above and parses it to generate a plot with a line corresponding to each note. The duration of the note is represented by the length of the line (shortest lines are quarter notes of 0.25 seconds). The graph can be read from left to right, starting at time 0 and continuing to the end of the song. The alternating colors are there to distinguish consecutive notes of the same kind. This helps us visualize how we will represent our songs: as a sequence of notes that will be played in order with varying durations.
+
+## Optimizing Phototransistor note readings
+
+**Goal:**
+
+* Design a procedure to optimally separate the thresholds of the three notes a Phototransistor will play.
+
+**Deliverable:**
+
+* Analyze how different starting procedures affect the accuracy of the note selected based on the distance from the hand to the tip of the Phototransistor. We will be plotting the distance that the notes change based on different starting procedures. 
+
+
+Initially, the procedure to determine the thresholds used to correlate the measures of the Phototransistor to the note being selected by the user involved placing a hand in two different distances above the sensor for several seconds (as described in the previous writeup). While this managed to create good distinctions between the measure of the Phototransistor (that is, the distance a hand was placed above the sensor) and the note being selected, sometimes the difference between the distance that a hand had to travel to change notes was somewhat small (less than an inch). This would produce incongruencies when trying to create music!
+
+To discard the variability of the user’s input in the calculation of the thresholds (because user’s input might mess up the calculation), we decided to work with information from the measures taken when the sensor is left gathering ambient light for 4 seconds. Call the average of these readings $A$ and the maximum $M$. 
+
+First, we assume that placing a hand directly above the Phototransistor would give a reading of $4095$ (this value is the maximum analog reading that the sensor can measure). Since last week we noticed that the phototransistor’s measure is linearly dependent on the distance between the hand and the sensor, we know that the thresholds should be somewhere between the $A$ and $4095$. Hence, we defined the function $f(x) = x(A - 4095) + 4095$, where $0 \leq x \leq 1$ to calculate the three thresholds.
+
+Using, $x_1 = \frac{1}{4}, x_2 = \frac{2}{4}, x_3 = \frac{3}{4}$ and plotting the measures taken from the phototransistor when moving a hand down towards the sensor and then up, we can visualize how the regions are defined in the following graph (as a clarifier, the measures above each region denote a different note):
+
+
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=176kq7dXztaKJVa4IMO5tahtHizZhPqde">
+    <p style="font-weight: bold;">Graph 1: Using ambient light average for thresholds</p>
+</section>
+
+
+Here, the region above the red line overlaps with the readings when the sensor has no hand in front of it; hence, this would make one of the notes overlap with “no note played”. Since the readings of the Phototransistor when gathering ambient light are not greater than $M$, we can define a new function $g(x) = x(M - 4095) + 4095$ to determine the thresholds and not have an overlap with “no note played”. 
+
+Apart from this, notice that the measures above the first region (green) should be closer to $4095$ because we know that placing our hand directly above the sensor will give us this measure and we can leave more space for the other two regions. Using, $g(x) and $x_1 = \frac{1}{16}, x_2 = \frac{8}{16}, x_3 = \frac{15}{16}$ gives us the following plot:
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1LU49Fiq_lLh41ORE5Bp-etHvBoO6XHNn">
+    <p style="font-weight: bold;">Graph 2: Using ambient light maximum for thresholds</p>
+</section>
+
+
+When using these thresholds, the distance between hand and sensor when going from the yellow line to the red line is approximately less than an inch. This means that the further away the hand is, the faster the readings change. To optimize the distance for each note and make the distances traveled to change notes be around 1 inch for each, we use $x_1 = \frac{1}{32}, x_2 = \frac{5}{16}, x_3 = \frac{15}{16}$, giving us the following plot. 
+<section style="text-align: center;">
+    <img src="https://drive.google.com/uc?id=1iZooz3r22b5AEKCm-AJfHPZiyL8-UyJj">
+    <p style="font-weight: bold;">Graph 3: Using ambient light maximum for thresholds optimized</p>
+</section>
+
+This will be the thresholds we will use to determine which notes the Phototransistors are playing!
+
+
+Deliverable: Also, we will create a function that returns the note that a user is playing (where there are more than 1 phototransistors). This is so that note selection can be easily integrated to the State Machine when the IMU is shaken.
+
+We will have four Phototransistors in the hardware. In the code, we have implemented a class for the Phototransistors such that each of the Phototransistors is assigned a designated triple of notes. For example, one of the Phototransistors will be assigned notes “C”, “C#”, “D”, another Phototransistor is assigned “D#”, “E”, “F”, etc. Furthermore, the regions defined in the previous section are used to determine which note the reading from the Phototransistor is mapping to. Since all of the Phototransistors will be exposed to equal light conditions, we can expect the regions to be the same for each. 
+To detect what note is being played when the IMU is shaken, we will call the function SelectNote(). This selects the note from the Phototransistor that has the highest measure. We can expect this to work because higher measurements from the Phototransistors is directly proportional to how close an object is to it. Below, we can see how the function was defined. 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void SelectNote(){
+  memset(selected_note, 0, sizeof(selected_note);
+  if (measure1 > measure2 && measure1 > measure3 && measure1 > measure4){
+    strcpy(selected_note, sensor1.note);
+  }
+  else if(measure2 > measure1 && measure2 > measure3 && measure2 > measure4){
+    strcpy(selected_note, sensor2.note);
+  }
+  else if(measure3 > measure1 && measure3 > measure2 && measure3 > measure4){
+    strcpy(selected_note, sensor3.note);
+  }
+  else if(measure4 > measure1 && measure4 > measure2 && measure4 > measure3){
+    strcpy(selected_note, sensor4.note);
+  }
+}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+
+# Code Appendix
+
+Arduino code for Note Duration:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MPU6050 imu; //imu object called, appropriately, imu
+
+void setup() {
+  Serial.begin(115200); //for debugging if needed.
+  delay(50); //pause to make sure comms get set up
+  Wire.begin();
+  delay(50); //pause to make sure comms get set up
+  if (imu.setupIMU(1)){
+    Serial.println("IMU Connected!");
+  }else{
+    Serial.println("IMU Not Connected :/");
+    Serial.println("Restarting");
+    ESP.restart(); // restart the ESP (proper way)
+  }
+  tft.init(); //initialize the screen
+  tft.setRotation(2); //set rotation for our layout
+  primary_timer = millis();
+  tft.fillScreen(TFT_WHITE); 
+  tft.setTextColor(TFT_BLACK, TFT_WHITE);
+  state = 0;
+  down_time = millis();
+}
+
+void loop() {
+  imu.readAccelData(imu.accelCount);
+  x = imu.accelCount[0]*imu.aRes;
+  y = imu.accelCount[1]*imu.aRes;
+  z = imu.accelCount[2]*imu.aRes;
+  FSM();
+  while (millis()-primary_timer<LOOP_PERIOD); //wait for primary timer to increment
+  primary_timer =millis();
+}
+
+
+void FSM() {
+  switch (state){
+    case IDLE:
+      if (x > 0.5){
+        memset(output, 0, sizeof(output));
+      }
+      if (z > upper_threshold && millis() - down_time > hold_time){
+        state = UP1;
+        start_time = millis();
+      }
+      break;
+    case UP1:
+      if (z < lower_threshold){
+        state = DOWN1; //changed
+        down_time = millis();
+      }
+      break;
+    case DOWN1:
+      if (millis() - down_time > wait_time && z < lower_threshold){
+        state = WAITING;
+      }
+      break;
+    case WAITING:
+      if (z > upper_threshold){
+        state = UP2;
+        end_time = millis();
+      }
+      break;
+    case UP2:
+      if (z < lower_threshold){
+        state = DOWN2;  //changed
+        down_time = millis();
+      }
+      break;
+    case DOWN2:
+      if (millis() - down_time > wait_time && z < lower_threshold){
+        state = SEND;
+      }
+      break;
+    case SEND:
+      uint32_t delta_t = end_time - start_time;
+      if (delta_t < half_note_threshold){
+        note_duration = quarter_note_duration;
+      } else if (delta_t < threequarters_note_threshold){
+        note_duration = half_note_duration;
+      } else if (delta_t < whole_note_threshold){
+        note_duration = threequarters_note_duration;
+      } else {
+        note_duration = whole_note_duration;
+      }
+      char note_and_duration[50];
+      sprintf(note_and_duration, "%s,%d&", note, note_duration);
+      strcat(output, note_and_duration);
+      Serial.println(output);
+      state = IDLE;
+      break;
+  }
+}
+  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The server-side python script:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+from pydub import AudioSegment
+from pydub.playback import play
+import simpleaudio.functionchecks as fc
+import array
+import io
+import base64
+import requests
+import sqlite3
+import datetime
+import time
+#import base32
+
+#BEFORE RUNNING
+#pip install pydub  [documentation: https://github.com/jiaaro/pydub]
+#pip install simpleaudio
+# then uncomment this line and run it!
+#fc.LeftRightCheck.run()
+
+
+songs_db = '__HOME__/songs.db'
+# songs_db = "songs.db"
+
+
+current_notes = {'A','B','C','D','E','F','G'}
+
+
+
+def create_database():
+    conn = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
+    c = conn.cursor()  # move cursor into database (allows us to execute commands)
+    c.execute('''CREATE TABLE song_table (filename text,timing timestamp );''') # run a CREATE TABLE command
+    conn.commit() # commit commands
+    conn.close() # close connection to database
+
+
+def request_handler(request, test = ''):
+	if request['method'] ==  'GET':
+		# note  = request['values'].get('note' , None)
+		# if note == None:
+		# 	return 'Must contain a note type'
+
+		# For the server 
+		#file_path = '__HOME__/{}_note.wav'.format(note)
+
+		# To test Locally 
+		#file_path = 'note_lib/{}_note.wav'.format(note)
+
+		## Raw audio data as an array of numeric samples ##
+
+		# audio_note = AudioSegment.from_file(file_path)
+		# sample_array = audio_note.get_array_of_samples()
+
+		# if test == 'arr_samples':
+		# 	print("Raw audio data:\n", sample_array)
+		# 	return (audio_note, sample_array)
+		
+		# ## Raw audio library in the form of a bytestring ##
+
+		# audio_note = AudioSegment.from_file(file_path)
+		# # returns bytes per sample  
+		# bytes_per_sample = audio_note.sample_width
+		# # returns sample rate 
+		# frames_per_second = audio_note.frame_rate
+		# # returns bit depth
+		# bytes_per_frame = audio_note.frame_width
+		# # audio data in the form of a bytestring 
+		# byte_string = audio_note.raw_data
+
+		# if test == 'str_bytes':
+		# 	print("Raw audio data:\n", byte_string)
+		# 	return (audio_note, byte_string)
+
+		# ## Audio in the form of a byte array ##
+
+		# byte_array = array.array('B')
+		# audio_note = open(file_path, 'rb')
+		# byte_array.frombytes(audio_note.read())
+		# audio_note.close()
+
+		# if test == 'arr_bytes':
+		# 	print("Arr bytes:\n", byte_array)
+		# 	return (audio_note, byte_array)
+
+		# user song file path being played
+		conn = sqlite3.connect(songs_db)
+		c = conn.cursor()
+
+		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()[0]
+
+		if filename is None:
+			return "No song files have been stored"
+		
+		user_song_path = "__HOME__/{}".format(filename)
+
+		conn.commit()
+		conn.close()
+
+		song = open(user_song_path, 'rb')
+		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
+		return b64_encoded.decode("utf-8")
+	else:
+		args = request['form']
+		song_sequence = args['song']
+
+		# POST request from ESP32 
+		new_song_file = string_to_file(song_sequence)
+		
+		filename = "song_{}.wav".format(str(int(time.time())))
+		# new_song_file.export(filename, format="wav")
+		conn = sqlite3.connect(songs_db)
+		c = conn.cursor()
+		# c.execute('''DELETE from song_table''')
+		# c.execute('''INSERT into song_table VALUES (?,?);''', (filename, datetime.datetime.now()))
+		#HARD CODE!
+		# c.execute('''INSERT into song_table VALUES (?,?);''', ("song_1587593050.wav", datetime.datetime.now()))
+		
+
+
+		conn.commit()  # commit commands
+		conn.close()  # close connection to database
+
+		return "Song added to the database!"
+
+
+def string_to_file(req):
+	"""
+	:param req: str in the form of notetime&notetime&notetime
+	
+	Things to note: 
+		- notetime : the note is being playing for duration of time
+		- 'S' represents silence
+		- time is in milliseconds
+
+	Returns an AudioSegment object 
+	"""
+	# initializes a zero duration Audio Segment 
+	user_sound = AudioSegment.empty()
+	# list of lists in the form of [[note,time], [note,time],[note,time]]
+	notes_times = [ pair.split(",") for pair in req.split('&')]
+
+	for nt in notes_times:
+		note = nt[0]
+		time = float(nt[1])
+		if note == 'S':
+			# how to add silence: time parameter is in milliseconds
+			user_sound+= AudioSegment.silent(time)
+		else: 
+			file_path = "note_lib/{}_note.wav".format(note)
+			user_sound += AudioSegment.from_wav(file_path)[:time]
+
+	return user_sound
+
+if __name__ == "__main__":
+	##  Test numeric samples ##
+
+	# audio_note, numeric_samples = request_handler({'method':'GET', 'values':{'note':'A'}}, 'arr_samples')
+	# play(audio_note._spawn(numeric_samples))
+
+	## Test byte string ##
+
+	# audio_note, raw_audio_data = request_handler({'method':'GET', 'values':{'note':'A'}},'str_bytes')
+	# play(audio_note._spawn(raw_audio_data))
+
+	## Test byte array ## 
+
+	# audio_file, byte_array = request_handler({'method':'GET', 'values':{'note':'A'}}, "arr_bytes")
+	# song = AudioSegment.from_file(io.BytesIO(byte_array), format="wav")
+	# play(song)
+
+	## Server defaults to byte_array 
+
+	# print(request_handler({'method':'GET', 'values':{'note':'A'}}))
+
+	## To play a parsed string 
+	new_song = string_to_file("C,750&C,250&D,1000&C,1000&F,1000&E,1000&C,750&C,250&D,1000&C,1000&F,1000&E,1000")
+	play(new_song)
+	#song_open = open(new_song., 'rb') 
+	#b64_encoded= base64.encodebytes(new_song.raw_data) #read image and encode it into base64
+	#print(b64_encoded)
+	# # # how to export 
+	# #new_song.export("user_song.wav", format="wav")
+	#AudioSegment.from_file('note_lib/user_song.wav').raw_data
+
+	pass
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+HTML code that sends GET request to server to play sequence:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Theremin-y</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    function updateAudio() {
+        let request = new XMLHttpRequest();
+        request.open('GET','server.py');
+        request.responseType = 'text';
+ 
+        request.onload = function() {
+            getSound(request.response);
+ 
+        };
+        request.send();
+    };
+ 
+    function getSound(base64_decoded) {
+        document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base64_decoded);
+    }
+ 
+  </script>
+</head>
+<body>
+    <main>
+        <h1>Theremin-y</h1>
+        <audio id="sound" src="" type="audio/wav" controls></audio>
+        <button onclick="updateAudio()">Get Sound</button>
+    </main>
+</body>
+</html>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HTML Code to spoof ESP32 POST requests and receive sound to play : 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+<style class="fallback">body{visibility:hidden}</style><script>markdeepOptions={tocStyle:'auto'};</script>
+<!-- Markdeep: --><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?" charset="utf-8"></script>
