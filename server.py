@@ -90,7 +90,7 @@ def request_handler(request, test = ''):
 		if filename is None:
 			return "No song files have been stored"
 		
-		user_song_path = "__HOME__/{}".format(filename)
+		user_song_path = "__HOME__/{}".format(filename[0])
 
 		conn.commit()
 		conn.close()
@@ -106,7 +106,11 @@ def request_handler(request, test = ''):
 		new_song_file = string_to_file(song_sequence)
 		
 		filename = "song_{}.wav".format(str(time.time()))
-		new_song_file.export(filename, format="wav")
+		#new_song_file.export(filename, format="wav")
+		
+		filepath = "/var/jail/home/team091/{}".format(filename)
+		new_song_file.export(filepath, format="wav")
+
 		conn = sqlite3.connect(songs_db)
 		c = conn.cursor()
 		c.execute('''INSERT into song_table VALUES (?,?);''', (filename, datetime.datetime.now()))
