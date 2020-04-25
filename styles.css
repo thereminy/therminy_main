@@ -2,17 +2,38 @@
     --font: Arial, Helvetica, sans-serif;
 }
 
+
 h1 {
     font-family: var(--font);
     margin-left: 1rem;
+    color: #344966;
 }
 
 button {
-    display: block;
+    display: inline-block;
     margin-top: 1rem;
     margin-left: 1rem;
     padding: 0.5em;
     font-family: var(--font);
     font-size: large;
+    font-weight: bold;
+    border-radius: 10px;
+    background-color: #339989;
+    border-color: #339989;
+    color: #231F20;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+input {
+    font-family: var(--font);
+    font-size: large;
+    font-weight: bold;
+    border-radius: 10px;
+    border-color: #231F20;
+    color: #231F20;
+    padding: 0.5em;
+}
+
+audio {
+    display: block;
 }

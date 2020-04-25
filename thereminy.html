@@ -5,30 +5,37 @@
 	<meta name="viewport" content="width=device-width">
 	<title>Theremin-y</title>
   <link rel="stylesheet" href="styles.css">
-  <script>
-    function updateAudio() {
-        let request = new XMLHttpRequest();
-        request.open('GET','https://608dev-2.net/sandbox/sc/team091/server.py');
-        request.responseType = 'text';
-
-        request.onload = function() {
-            getSound(request.response);
-
-        };
-        request.send();
-    };
-
-    function getSound(base64_decoded) {
-        document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base64_decoded);
-    }
-
-  </script>
 </head>
 <body>
     <main>
         <h1>Theremin-y</h1>
         <audio id="sound" src="" type="audio/wav" controls></audio>
+        <input id="user" type="text" name="username" placeholder="Username" required>
         <button onclick="updateAudio()">Get Sound</button>
     </main>
+    <script>
+        function updateAudio() {
+            let request = new XMLHttpRequest();
+            let user = document.getElementById("user").value;
+
+            if (user === "") {
+                alert("Please fill out a username");
+            } else {
+                request.open('GET','server.py?user=' + user);
+                request.responseType = 'text';
+        
+                request.onload = function() {
+                    getSound(request.response);
+        
+                };
+                request.send();
+                }
+        };
+    
+        function getSound(base64_decoded) {
+            document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base64_decoded);
+        }
+    
+      </script>
 </body>
 </html>
