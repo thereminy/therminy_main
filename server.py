@@ -31,7 +31,6 @@ def create_database():
     c.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp );''') # run a CREATE TABLE command
     conn.commit() # commit commands
     conn.close() # close connection to database
-create_database()
 
 
 def request_handler(request, test = ''):
@@ -88,7 +87,7 @@ def request_handler(request, test = ''):
 		conn = sqlite3.connect(songs_db)
 		c = conn.cursor()
 
-		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC WHERE user = ?;''',(user,)).fetchone()
+		filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
 
 		if filename is None:
 			return "No song files have been stored"
