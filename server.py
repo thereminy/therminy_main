@@ -28,9 +28,10 @@ current_notes = {'A','B','C','D','E','F','G'}
 def create_database():
     conn = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
     c = conn.cursor()  # move cursor into database (allows us to execute commands)
-    c.execute('''CREATE TABLE song_table (filename text,timing timestamp );''') # run a CREATE TABLE command
+    c.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp );''') # run a CREATE TABLE command
     conn.commit() # commit commands
     conn.close() # close connection to database
+create_database()
 
 
 def request_handler(request, test = ''):
@@ -82,10 +83,12 @@ def request_handler(request, test = ''):
 		# 	return (audio_note, byte_array)
 
 		# user song file path being played
+		user = request["values"]['user']
+
 		conn = sqlite3.connect(songs_db)
 		c = conn.cursor()
 
-		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC;''').fetchone()
+		filename = c.execute('''SELECT filename FROM song_table ORDER BY timing DESC WHERE user = ?;''',(user,)).fetchone()
 
 		if filename is None:
 			return "No song files have been stored"
