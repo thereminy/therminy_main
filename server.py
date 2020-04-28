@@ -104,6 +104,7 @@ def request_handler(request, test = ''):
 	else:
 		args = request['form']
 		song_sequence = args['song']
+		user = args['user']
 
 		# POST request from ESP32 
 		new_song_file = string_to_file(song_sequence)
@@ -116,7 +117,7 @@ def request_handler(request, test = ''):
 
 		conn = sqlite3.connect(songs_db)
 		c = conn.cursor()
-		c.execute('''INSERT into song_table VALUES (?,?);''', (filename, datetime.datetime.now()))
+		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,filename, datetime.datetime.now()))
 		conn.commit()  # commit commands
 		conn.close()  # close connection to database
 
