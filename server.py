@@ -42,6 +42,7 @@ def request_handler(request, test = ''):
 		c = conn.cursor()
 
 		filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
+		print("f:",filename)
 
 		if filename is None:
 			return "No song files have been stored"
@@ -58,9 +59,11 @@ def request_handler(request, test = ''):
 		args = request['form']
 		song_sequence = args['song']
 		user = args['user']
+		instrument = args['instrument'] #guitar/bass/piano
+		option = args['option'] #add/start/[overlay,user]
 
 		# POST request from ESP32 
-		new_song_file = string_to_file(song_sequence)
+		new_song_file = string_to_file(song_sequence,instrument)
 		
 		filename = "song_{}.wav".format(str(time.time()))
 		#new_song_file.export(filename, format="wav")
@@ -77,7 +80,7 @@ def request_handler(request, test = ''):
 		return "Song added to the database!"
 
 
-def string_to_file(req):
+def string_to_file(req,instrument):
 	"""
 	:param req: str in the form of notetime&notetime&notetime
 	
@@ -102,13 +105,11 @@ def string_to_file(req):
 				# how to add silence: time parameter is in milliseconds
 				user_sound+= AudioSegment.silent(time)
 			else: 
-				file_path = "__HOME__/note_lib/{}_note.wav".format(note)
+				file_path = "__HOME__/note_lib/{}_{}_note.wav".format(instrument,note)
 				user_sound += AudioSegment.from_wav(file_path)[:time]
 
 	return user_sound
 
-seq = "D,1000$"
-print(string_to_file(seq))
 
 if __name__ == "__main__":
 	##  Test numeric samples ##
@@ -138,6 +139,24 @@ if __name__ == "__main__":
 	#print(b64_encoded)
 	# # # how to export 
 	# #new_song.export("user_song.wav", format="wav")
-	#AudioSegment.from_file('note_lib/user_song.wav').raw_data
+	# A = AudioSegment.from_file('note_lib/A_note.wav')
+	# B = AudioSegment.from_file('note_lib/B_note.wav')
+	# C = AudioSegment.from_file('note_lib/C_note.wav')
+	# D = AudioSegment.from_file('note_lib/D_note.wav')
+	# E = AudioSegment.from_file('note_lib/E_note.wav')
+	# F = AudioSegment.from_file('note_lib/F_note.wav')
+	# G = AudioSegment.from_file('note_lib/G_note.wav')
+
+
+
+	# GB = G.overlay(B)
+	# GBD = GB.overlay(D)
+	# play(GB)
+
+	# CE = C.overlay(E)
+	# CEG = CE.overlay(G)
+	# play(CE)
+	# play(CEG)
+
 
 	pass
