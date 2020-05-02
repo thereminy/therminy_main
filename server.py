@@ -22,6 +22,7 @@ songs_db = '__HOME__/songs.db'
 
 
 current_notes = {'A','B','C','D','E','F','G'}
+instruments = {'guitar','bass','piano'}
 
 
 
@@ -60,24 +61,60 @@ def request_handler(request, test = ''):
 		song_sequence = args['song']
 		user = args['user']
 		instrument = args['instrument'] #guitar/bass/piano
+
+		if instrument not in instruments:
+			return "This instrument is not supported."
+
 		option = args['option'] #add/start/[overlay,user]
 
-		# POST request from ESP32 
-		new_song_file = string_to_file(song_sequence,instrument)
-		
-		filename = "song_{}.wav".format(str(time.time()))
-		#new_song_file.export(filename, format="wav")
-		
-		filepath = "/var/jail/home/team091/{}".format(filename)
-		new_song_file.export(filepath, format="wav")
 
-		conn = sqlite3.connect(songs_db)
-		c = conn.cursor()
-		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,filename, datetime.datetime.now()))
-		conn.commit()  # commit commands
-		conn.close()  # close connection to database
+		if option == 'START':
+			startSong(user,song_sequence,instrument)
+		elif option == 'ADD':
+			addSong(user,song_sequence,instrument)
 
 		return "Song added to the database!"
+
+def startSong(user,song_sequence,instrument):
+	# POST request from ESP32 
+	new_song_file = string_to_file(song_sequence,instrument)
+
+	filename = "song_{}.wav".format(str(time.time()))
+
+	filepath = "/var/jail/home/team091/{}".format(filename)
+	new_song_file.export(filepath, format="wav")
+
+	conn = sqlite3.connect(songs_db)
+	c = conn.cursor()
+	c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,filename, datetime.datetime.now()))
+	conn.commit()  # commit commands
+	conn.close()  # close connection to database
+
+def addSong(user,song_sequence,instrument):
+	new_song_file = string_to_file(song_sequence,instrument)
+	song_name = "song_{}.wav".format(str(time.time()))
+	filepath = "/var/jail/home/team091/{}".format(song_name)
+
+	conn = sqlite3.connect(songs_db)
+	c = conn.cursor()
+
+	filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
+
+	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
+		startSong(user,song_sequence,instrument)
+		return "Your database is EMPTY! New song file created for add sequence only"
+	else:
+	
+		user_song_path = "__HOME__/{}".format(filename[0])
+		old_song = AudioSegment.from_wav(user_song_path)
+		add_song = old_song + new_song_file
+		add_song.export(filepath,format="wav")
+
+		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,song_name, datetime.datetime.now()))
+
+	conn.commit()
+	conn.close()
+
 
 
 def string_to_file(req,instrument):
@@ -100,7 +137,6 @@ def string_to_file(req,instrument):
 		note = nt[0]
 		if note != "":
 			time = float(nt[1])
-			print("t:",time)
 			if note == 'S':
 				# how to add silence: time parameter is in milliseconds
 				user_sound+= AudioSegment.silent(time)
