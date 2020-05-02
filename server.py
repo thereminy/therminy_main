@@ -66,23 +66,33 @@ def request_handler(request, test = ''):
 			return "This instrument is not supported."
 
 		option = args['option'] #add/start/[overlay,user]
+		song_file = string_to_file(song_sequence,instrument)
 
 
 		if option == 'START':
 			startSong(user,song_sequence,instrument)
+			return "Song added to the database!"
+
 		elif option == 'ADD':
 			addSong(user,song_sequence,instrument)
+			return "Song added to the database!"
 
-		return "Song added to the database!"
+		elif option.split(',')[0] == 'OVERLAY':
+			user2 = option.split(',')[1]
+			overlaySong(user,user2,song_file)
+			return "Song added to the database!"
 
-def startSong(user,song_sequence,instrument):
+		else:
+			return "{} is not a supported option.".format(option)
+
+
+
+def startSong(user,song_file):
 	# POST request from ESP32 
-	new_song_file = string_to_file(song_sequence,instrument)
-
 	filename = "song_{}.wav".format(str(time.time()))
 
 	filepath = "/var/jail/home/team091/{}".format(filename)
-	new_song_file.export(filepath, format="wav")
+	song_file.export(filepath, format="wav")
 
 	conn = sqlite3.connect(songs_db)
 	c = conn.cursor()
@@ -90,8 +100,7 @@ def startSong(user,song_sequence,instrument):
 	conn.commit()  # commit commands
 	conn.close()  # close connection to database
 
-def addSong(user,song_sequence,instrument):
-	new_song_file = string_to_file(song_sequence,instrument)
+def addSong(user,song_file):
 	song_name = "song_{}.wav".format(str(time.time()))
 	filepath = "/var/jail/home/team091/{}".format(song_name)
 
@@ -101,13 +110,13 @@ def addSong(user,song_sequence,instrument):
 	filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
 
 	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
-		startSong(user,song_sequence,instrument)
+		startSong(user,song_file)
 		return "Your database is EMPTY! New song file created for add sequence only"
 	else:
 	
 		user_song_path = "__HOME__/{}".format(filename[0])
 		old_song = AudioSegment.from_wav(user_song_path)
-		add_song = old_song + new_song_file
+		add_song = old_song + song_file
 		add_song.export(filepath,format="wav")
 
 		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,song_name, datetime.datetime.now()))
@@ -115,6 +124,41 @@ def addSong(user,song_sequence,instrument):
 	conn.commit()
 	conn.close()
 
+def overlaySong(user1,user2,song_file):
+	song_name = "song_{}.wav".format(str(time.time()))
+	filepath = "/var/jail/home/team091/{}".format(song_name)
+
+	conn = sqlite3.connect(songs_db)
+	c = conn.cursor()
+
+	filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user2,)).fetchone()
+
+	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
+		return "{} does not exist!".format(user2)
+	else:
+		user_song_path = "__HOME__/{}".format(filename[0])
+		user2_song = AudioSegment.from_wav(user_song_path)
+
+		#prevent song truncation!
+		song1_len = len(song_file)
+		song2_len = len(user2_song)
+		if song1_len != song2_len:
+			shorter = min(song1_len,song2_len)
+			longer = max(song1_len,song2_len)
+			if shorter == song1_len:
+				song_file += AudioSegment.silent(duration=longer-shorter) #add silence to shorter song to equalize length!
+			else:
+				user2_song += AudioSegment.silent(duration=longer-shorter)
+
+			#overlay songs!
+			overlay_song = song_file.overlay(user2_song)
+			overlay_song.export(filepath,format="wav")
+			#save to user1 db!
+			c.execute('''INSERT into song_table VALUES (?,?,?);''', (user1,song_name, datetime.datetime.now()))
+
+
+	conn.commit()
+	conn.close()
 
 
 def string_to_file(req,instrument):
