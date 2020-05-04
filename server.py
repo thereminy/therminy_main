@@ -8,6 +8,7 @@ import requests
 import sqlite3
 import datetime
 import time
+import json 
 #import base32
 
 #BEFORE RUNNING
@@ -42,20 +43,24 @@ def request_handler(request, test = ''):
 		conn = sqlite3.connect(songs_db)
 		c = conn.cursor()
 
-		filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
-		print("f:",filename)
+		all_songs = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchall()
 
-		if filename is None:
+		if all_songs is None:
 			return "No song files have been stored"
 		
-		user_song_path = "__HOME__/{}".format(filename[0])
+
+		songs = []
+
+		for song in all_songs: 
+			filename = song[0]
+			song = open(get_file_path(filename), 'rb')
+			b64_encoded = base64.encodebytes(song.read())
+			songs.append(b64_encoded.decode("utf-8"))
 
 		conn.commit()
 		conn.close()
 
-		song = open(user_song_path, 'rb')
-		b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
-		return b64_encoded.decode("utf-8")
+		return json.dumps(songs)
 	else:
 		args = request['form']
 		song_sequence = args['song']
@@ -68,24 +73,22 @@ def request_handler(request, test = ''):
 		option = args['option'] #add/start/[overlay,user]
 		song_file = string_to_file(song_sequence,instrument)
 
-
 		if option == 'START':
 			startSong(user,song_sequence,instrument)
 			return "Song added to the database!"
-
 		elif option == 'ADD':
 			addSong(user,song_sequence,instrument)
 			return "Song added to the database!"
-
 		elif option.split(',')[0] == 'OVERLAY':
 			user2 = option.split(',')[1]
 			overlaySong(user,user2,song_file)
 			return "Song added to the database!"
-
 		else:
 			return "{} is not a supported option.".format(option)
 
 
+def get_file_path(filename):
+	return "__HOME__/{}".format(filename)
 
 def startSong(user,song_file):
 	# POST request from ESP32 
