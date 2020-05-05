@@ -74,10 +74,10 @@ def request_handler(request, test = ''):
 		song_file = string_to_file(song_sequence,instrument)
 
 		if option == 'START':
-			startSong(user,song_sequence,instrument)
+			startSong(user,song_file)
 			return "Song added to the database!"
 		elif option == 'ADD':
-			addSong(user,song_sequence,instrument)
+			addSong(user,song_file)
 			return "Song added to the database!"
 		elif option.split(',')[0] == 'OVERLAY':
 			user2 = option.split(',')[1]
@@ -153,11 +153,11 @@ def overlaySong(user1,user2,song_file):
 			else:
 				user2_song += AudioSegment.silent(duration=longer-shorter)
 
-			#overlay songs!
-			overlay_song = song_file.overlay(user2_song)
-			overlay_song.export(filepath,format="wav")
-			#save to user1 db!
-			c.execute('''INSERT into song_table VALUES (?,?,?);''', (user1,song_name, datetime.datetime.now()))
+		#overlay songs!
+		overlay_song = song_file.overlay(user2_song)
+		overlay_song.export(filepath,format="wav")
+		#save to user1 db!
+		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user1,song_name, datetime.datetime.now()))
 
 
 	conn.commit()
