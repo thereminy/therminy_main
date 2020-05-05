@@ -5,6 +5,7 @@
 
 h1 {
     font-family: var(--font);
+    font-size: 2.5rem;
     margin-left: 1rem;
     color: #344966;
 }
@@ -37,3 +38,18 @@ input {
 audio {
     display: block;
 }
+
+ul {
+    list-style: none;
+}
+
+li {
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 1em;
+    margin-left: 0;
+    text-align: start;
+}
+

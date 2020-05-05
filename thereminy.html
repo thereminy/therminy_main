@@ -12,12 +12,17 @@
         <audio id="sound" src="" type="audio/wav" controls></audio>
         <input id="user" type="text" name="username" placeholder="Username" required>
         <button onclick="updateAudio()">Get Sound</button>
+        <h1>Songs</h1>
+        <ul id="songs">
+            <!-- Populate songs  -->
+        </ul>
     </main>
     <script>
+        const songs = document.getElementById("songs");
+
         function updateAudio() {
             let request = new XMLHttpRequest();
             let user = document.getElementById("user").value;
-
             if (user === "") {
                 alert("Please fill out a username");
             } else {
@@ -25,8 +30,8 @@
                 request.responseType = 'text';
         
                 request.onload = function() {
-                    getSound(request.response);
-        
+                    console.log(JSON.parse(request.response));
+                    populateSongs(JSON.parse(request.response));
                 };
                 request.send();
                 }
@@ -34,6 +39,28 @@
     
         function getSound(base64_decoded) {
             document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base64_decoded);
+        }
+
+        function populateSongs(response){
+            resetSongs();
+            let count = 1;
+            for (const base_64 of response){
+                let song = document.createElement("li");
+                let name = document.createTextNode("song"+count);
+                song.appendChild(name);
+                song.id = base_64;
+                songs.append(song);
+                song.addEventListener('click', () => {
+                    document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base_64);                   
+                })
+                count+=1;
+            }
+        }
+
+        function resetSongs(){
+            while (songs.hasChildNodes()) {
+                songs.removeChild(songs.lastChild);
+            }
         }
     
       </script>
