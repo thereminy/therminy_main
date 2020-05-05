@@ -79,8 +79,8 @@ def request_handler(request, test = ''):
 		elif option == 'ADD':
 			addSong(user,song_file)
 			return "Song added to the database!"
-		elif option.split(',')[0] == 'OVERLAY':
-			user2 = option.split(',')[1]
+		elif option ==  'OVERLAY':
+			user2 = args['user2']
 			overlaySong(user,user2,song_file)
 			return "Song added to the database!"
 		else:
