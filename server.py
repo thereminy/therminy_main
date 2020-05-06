@@ -64,7 +64,7 @@ def request_handler(request, test = ''):
 	else:
 		args = request['form']
 		song_sequence = args['song']
-		user = args['user']
+		user = args['user1']
 		instrument = args['instrument'] #guitar/bass/piano
 
 		if instrument not in instruments:
