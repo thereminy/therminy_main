@@ -125,7 +125,7 @@ def startSong(user,song_file):
 
 	conn = sqlite3.connect(music_db)
 	c = conn.cursor()
-	c.execute('''INSERT into song_table VALUES (?,?,?,?);''', (user,filename, "Untitled", datetime.datetime.now()))
+	c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,filename, "Untitled", datetime.datetime.now()))
 	conn.commit()  # commit commands
 	conn.close()  # close connection to database
 
@@ -133,10 +133,10 @@ def addSong(user,song_file):
 	song_name = "song_{}.wav".format(str(time.time()))
 	filepath = "/var/jail/home/team091/{}".format(song_name)
 
-	conn = sqlite3.connect(songs_db)
+	conn = sqlite3.connect(music_db)
 	c = conn.cursor()
 
-	filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
+	filename = c.execute('''SELECT filename FROM music_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
 
 	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
 		startSong(user,song_file)
@@ -148,7 +148,7 @@ def addSong(user,song_file):
 		add_song = old_song + song_file
 		add_song.export(filepath,format="wav")
 
-		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,song_name, datetime.datetime.now()))
+		c.execute('''INSERT into music_table VALUES (?,?,?);''', (user,song_name, datetime.datetime.now()))
 
 	conn.commit()
 	conn.close()
@@ -157,10 +157,10 @@ def overlaySong(user1,user2,song_file):
 	song_name = "song_{}.wav".format(str(time.time()))
 	filepath = "/var/jail/home/team091/{}".format(song_name)
 
-	conn = sqlite3.connect(songs_db)
+	conn = sqlite3.connect(music_db)
 	c = conn.cursor()
 
-	filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user2,)).fetchone()
+	filename = c.execute('''SELECT filename FROM music_table WHERE user = ? ORDER BY timing DESC ;''',(user2,)).fetchone()
 
 	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
 		return "{} does not exist!".format(user2)
@@ -183,7 +183,7 @@ def overlaySong(user1,user2,song_file):
 		overlay_song = song_file.overlay(user2_song)
 		overlay_song.export(filepath,format="wav")
 		#save to user1 db!
-		c.execute('''INSERT into song_table VALUES (?,?,?);''', (user1,song_name, datetime.datetime.now()))
+		c.execute('''INSERT into music_table VALUES (?,?,?);''', (user1,song_name, datetime.datetime.now()))
 
 
 	conn.commit()
