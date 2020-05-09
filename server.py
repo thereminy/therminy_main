@@ -71,15 +71,18 @@ def request_handler(request, test = ''):
 		conn_music = sqlite3.connect(music_db)
 		c_music = conn_music.cursor() 
 
-		all_music = c_music.execute('''SELECT filename FROM music_table where user = ? ORDER BY timing DESC ;''', (user,)).fetchall()
+		all_music = c_music.execute('''SELECT filename, name FROM music_table where user = ? ORDER BY timing DESC ;''', (user,)).fetchall()
 
 		if all_music is None:
 			return "No song files have been stored"
 
 		songs = []
+		# returns list in the form of [name, bytestring, name, bytestring] for every song in all_music 
 		for song in all_music: 
 			filename = song[0]
+			name = song[1]
 			song = open(get_file_path(filename), 'rb')
+			songs.append(name)
 			b64_encoded = base64.encodebytes(song.read())
 			songs.append(b64_encoded.decode("utf-8"))
 
