@@ -89,28 +89,47 @@ def request_handler(request, test = ''):
 		return json.dumps(songs)
 	else:
 		args = request['form']
-		song_sequence = args['song']
-		user = args['user1']
-		instrument = args['instrument'] #guitar/bass/piano
-
-		if instrument not in instruments:
-			return "This instrument is not supported."
-
-		option = args['option'] #add/start/[overlay,user]
-		song_file = string_to_file(song_sequence,instrument)
-
-		if option == 'START':
-			startSong(user,song_file)
-			return "Song added to the database!"
-		elif option == 'ADD':
-			addSong(user,song_file)
-			return "Song added to the database!"
-		elif option ==  'OVERLAY':
-			user2 = args['user2']
-			overlaySong(user,user2,song_file)
-			return "Song added to the database!"
+		# checks if this request is for changing the name 
+		change_name = args.get('edit', {})
+		# we need to change the name 
+		if change_name != {}:
+			user = args['user']
+			new_names = change_name.split(',')
+			conn_music = sqlite3.connect(music_db)
+			c_music = conn_music.cursor() 
+			user_music = c_music.execute("""SELECT * FROM music_table WHERE user = ? ORDER BY timing DESC """,(user,)).fetchall()
+			c_music.execute("""DELETE FROM music_table WHERE user = ? """, (user,))
+			for i in range(len(user_music)):
+				filename = user_music[i][1]
+				time = user_music[i][3]
+				name = new_names[i]
+				c_music.execute("""INSERT into music_table VALUES (?,?,?,?);""", (user, filename, name, time))
+			lol = c_music.execute("""SELECT * from music_table WHERE user = ? """, (user,)).fetchall()
+			conn_music.commit()
+			conn_music.close()
 		else:
-			return "{} is not a supported option.".format(option)
+			song_sequence = args['song']
+			user = args['user1']
+			instrument = args['instrument'] #guitar/bass/piano
+
+			if instrument not in instruments:
+				return "This instrument is not supported."
+
+			option = args['option'] #add/start/[overlay,user]
+			song_file = string_to_file(song_sequence,instrument)
+
+			if option == 'START':
+				startSong(user,song_file)
+				return "Song added to the database!"
+			elif option == 'ADD':
+				addSong(user,song_file)
+				return "Song added to the database!"
+			elif option ==  'OVERLAY':
+				user2 = args['user2']
+				overlaySong(user,user2,song_file)
+				return "Song added to the database!"
+			else:
+				return "{} is not a supported option.".format(option)
 
 
 def get_file_path(filename):
