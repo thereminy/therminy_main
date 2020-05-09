@@ -30,10 +30,35 @@ instruments = {'guitar','bass','piano'}
 def create_database():
     conn = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
     c = conn.cursor()  # move cursor into database (allows us to execute commands)
-    c.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp );''') # run a CREATE TABLE command
+    c.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp);''') # run a CREATE TABLE command
     conn.commit() # commit commands
     conn.close() # close connection to database
 
+music_db = '__HOME__/music.db'
+def create_new_database(): 
+	"""	
+	Creates a database with the new parameter
+	"""
+	# handles new data base
+	conn_music = sqlite3.connect(music_db)
+	c_music = conn_music.cursor() 
+	c_music.execute('''CREATE TABLE IF NOT EXISTS music_table (user text, filename text, name text, timing timestamp);''')
+
+	# handles old data base 
+	conn_songs = sqlite3.connect(songs_db)
+	c_songs = conn_songs.cursor() 
+	songs = c_songs.execute('''SELECT * FROM song_table ORDER BY timing DESC ;''').fetchall()
+	for info in songs: 
+		username = info[0]
+		filename = info[1]
+		time = info[2]
+		c_music.execute('''INSERT into music_table VALUES (?,?,?,?);''', (username,filename, "Untitled", time))
+	all_music = c_music.execute('''SELECT * FROM music_table ORDER BY timing DESC ;''').fetchall()
+	return all_music
+	conn_songs.commit()	
+	conn_songs.close()
+	conn_music.commit()
+	conn_music.close()
 
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
@@ -48,7 +73,6 @@ def request_handler(request, test = ''):
 		if all_songs is None:
 			return "No song files have been stored"
 		
-
 		songs = []
 
 		for song in all_songs: 
@@ -240,6 +264,5 @@ if __name__ == "__main__":
 	# CEG = CE.overlay(G)
 	# play(CE)
 	# play(CEG)
-
 
 	pass
