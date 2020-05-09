@@ -47,6 +47,7 @@ def create_new_database():
 	# handles old data base 
 	conn_songs = sqlite3.connect(songs_db)
 	c_songs = conn_songs.cursor() 
+	# adds all the songs from an old database
 	songs = c_songs.execute('''SELECT * FROM song_table ORDER BY timing DESC ;''').fetchall()
 	for info in songs: 
 		username = info[0]
@@ -54,7 +55,6 @@ def create_new_database():
 		time = info[2]
 		c_music.execute('''INSERT into music_table VALUES (?,?,?,?);''', (username,filename, "Untitled", time))
 	all_music = c_music.execute('''SELECT * FROM music_table ORDER BY timing DESC ;''').fetchall()
-	return all_music
 	conn_songs.commit()	
 	conn_songs.close()
 	conn_music.commit()
@@ -63,26 +63,28 @@ def create_new_database():
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
 		# user song file path being played
-		user = request["values"]['user']
+		user = request["values"].get('user',{})
+		if user == {}:
+			return "Must include user in query parameter!"
+		#return user
 
-		conn = sqlite3.connect(songs_db)
-		c = conn.cursor()
+		conn_music = sqlite3.connect(music_db)
+		c_music = conn_music.cursor() 
 
-		all_songs = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchall()
+		all_music = c_music.execute('''SELECT filename FROM music_table where user = ? ORDER BY timing DESC ;''', (user,)).fetchall()
 
-		if all_songs is None:
+		if all_music is None:
 			return "No song files have been stored"
-		
-		songs = []
 
-		for song in all_songs: 
+		songs = []
+		for song in all_music: 
 			filename = song[0]
 			song = open(get_file_path(filename), 'rb')
 			b64_encoded = base64.encodebytes(song.read())
 			songs.append(b64_encoded.decode("utf-8"))
 
-		conn.commit()
-		conn.close()
+		conn_music.commit()
+		conn_music.close()
 
 		return json.dumps(songs)
 	else:
@@ -121,9 +123,9 @@ def startSong(user,song_file):
 	filepath = "/var/jail/home/team091/{}".format(filename)
 	song_file.export(filepath, format="wav")
 
-	conn = sqlite3.connect(songs_db)
+	conn = sqlite3.connect(music_db)
 	c = conn.cursor()
-	c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,filename, datetime.datetime.now()))
+	c.execute('''INSERT into song_table VALUES (?,?,?,?);''', (user,filename, "Untitled", datetime.datetime.now()))
 	conn.commit()  # commit commands
 	conn.close()  # close connection to database
 
