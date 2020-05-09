@@ -148,7 +148,7 @@ def addSong(user,song_file):
 		add_song = old_song + song_file
 		add_song.export(filepath,format="wav")
 
-		c.execute('''INSERT into music_table VALUES (?,?,?);''', (user,song_name, datetime.datetime.now()))
+		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,song_name, "Untitled", datetime.datetime.now()))
 
 	conn.commit()
 	conn.close()
@@ -183,7 +183,7 @@ def overlaySong(user1,user2,song_file):
 		overlay_song = song_file.overlay(user2_song)
 		overlay_song.export(filepath,format="wav")
 		#save to user1 db!
-		c.execute('''INSERT into music_table VALUES (?,?,?);''', (user1,song_name, datetime.datetime.now()))
+		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user1,song_name, "Untitled", datetime.datetime.now()))
 
 
 	conn.commit()
