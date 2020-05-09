@@ -10,6 +10,11 @@ h1 {
     color: #344966;
 }
 
+.spacing {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
 button {
     display: inline-block;
     margin-top: 1rem;
@@ -44,12 +49,14 @@ ul {
 }
 
 li {
+    display: block;
     cursor: pointer;
     font-family: var(--font);
     font-size: 2rem;
     font-weight: bold;
-    margin: 1em;
-    margin-left: 0;
+    margin: 1.2rem;
+    margin-left: -1rem;
+    width: fit-content;
     text-align: start;
 }
 
