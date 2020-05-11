@@ -11,50 +11,50 @@
         <h1>Theremin-y</h1>
         <audio id="sound" src="" type="audio/wav" controls></audio>
         <input id="user" type="text" name="username" placeholder="Username" required>
-        <button id="get" onclick="updateAudio()">Get Songs</button>
+        <button id="get" onclick="getSongs()">Get Songs</button>
         <h1 class="spacing">Songs</h1>
         <ul id="songs">
             <!-- Populate songs  -->
         </ul>
-        <button id="edit" onclick="handleEdits()">Edit Songs</button>
+        <button id="edit" onclick="handleRenaming()">Rename Songs</button>
     </main>
     <script>
         const songs = document.getElementById("songs");
         const edit = document.getElementById("edit");
         let lastUser = "";
 
-        function handleEdits(){
+        function handleRenaming(){
             let songsChildren = songs.children;
             let len = songsChildren.length;
             
             if (len > 0) {
-                if (edit.textContent === "Edit Songs"){
+                if (edit.textContent === "Rename Songs"){
                     for (const song of songsChildren){
                         song.setAttribute("contenteditable",true);
                     }
                     edit.textContent = "Submit Edits";
                 } else if (edit.textContent === "Submit Edits") {
-                    let edits = [];
+                    let names = [];
                     for (const song of songsChildren){
-                        edits.push(song.textContent);
+                        names.push(song.textContent);
                         song.setAttribute("contenteditable",false);
                     }
-                    edit.textContent = "Edit Songs";
-                    postEdits(edits);
+                    edit.textContent = "Rename Songs";
+                    postNames(names);
                 }
             }
         }
 
-        function postEdits(edits){
+        function postNames(names){
             let request = new XMLHttpRequest();
             let data = new FormData();
-            data.append('edit',edits);
+            data.append('edit',names);
             data.append('user',lastUser);
             request.open("POST", 'server.py', true);
             request.send(data);
         }
 
-        function updateAudio() {
+        function getSongs() {
             let request = new XMLHttpRequest();
             let user = document.getElementById("user").value;
             if (user === "") {
@@ -70,10 +70,6 @@
                 request.send();
                 }
         };
-    
-        function getSound(base64_decoded) {
-            document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base64_decoded);
-        }
 
         function populateSongs(response){
             resetSongs();
