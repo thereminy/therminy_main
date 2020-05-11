@@ -40,7 +40,7 @@ KEY:
 
 def create_database():
     conn_s = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
-    c_s = conn.cursor()  # move cursor into database (allows us to execute commands)
+    c_s = conn_s.cursor()  # move cursor into database (allows us to execute commands)
     c_s.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp);''') # run a CREATE TABLE command
     conn_s.commit() # commit commands
     conn_s.close() # close connection to database
@@ -61,10 +61,10 @@ def create_new_database():
 
 	# adds all the songs from an old database
 	songs = c_s.execute('''SELECT * FROM song_table ORDER BY timing DESC ;''').fetchall()
-	for info in songs: 
-		user_name = info[0]
-		file_name = info[1]
-		time = info[2]
+	for song in songs: 
+		user_name = song[0]
+		file_name = song[1]
+		time = song[2]
 		c_m.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user_name,file_name, "Untitled", time))
 
 	conn_s.commit()	
