@@ -26,13 +26,24 @@ current_notes = {'A','B','C','D','E','F','G'}
 instruments = {'guitar','bass','piano'}
 
 
+"""
+KEY: 
+	file_name: file name
+	user_name : user's name
+	song_seq : song sequence
+	time: timestamp
+	song_file: returned from string_to_file function
+	title : name of song 
+	_s : uses songs_db
+	_m : uses to music_db
+"""
 
 def create_database():
-    conn = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
-    c = conn.cursor()  # move cursor into database (allows us to execute commands)
-    c.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp);''') # run a CREATE TABLE command
-    conn.commit() # commit commands
-    conn.close() # close connection to database
+    conn_s = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
+    c_s = conn.cursor()  # move cursor into database (allows us to execute commands)
+    c_s.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp);''') # run a CREATE TABLE command
+    conn_s.commit() # commit commands
+    conn_s.close() # close connection to database
 
 music_db = '__HOME__/music.db'
 def create_new_database(): 
@@ -40,79 +51,78 @@ def create_new_database():
 	Creates a database with the new parameter
 	"""
 	# handles new data base
-	conn_music = sqlite3.connect(music_db)
-	c_music = conn_music.cursor() 
-	c_music.execute('''CREATE TABLE IF NOT EXISTS music_table (user text, filename text, name text, timing timestamp);''')
+	conn_m = sqlite3.connect(music_db)
+	c_m = conn_m.cursor() 
+	c_m.execute('''CREATE TABLE IF NOT EXISTS music_table (user text, filename text, name text, timing timestamp);''')
 
 	# handles old data base 
-	conn_songs = sqlite3.connect(songs_db)
-	c_songs = conn_songs.cursor() 
+	conn_s = sqlite3.connect(songs_db)
+	c_s = conn_s.cursor() 
+
 	# adds all the songs from an old database
-	songs = c_songs.execute('''SELECT * FROM song_table ORDER BY timing DESC ;''').fetchall()
+	songs = c_s.execute('''SELECT * FROM song_table ORDER BY timing DESC ;''').fetchall()
 	for info in songs: 
-		username = info[0]
-		filename = info[1]
+		user_name = info[0]
+		file_name = info[1]
 		time = info[2]
-		c_music.execute('''INSERT into music_table VALUES (?,?,?,?);''', (username,filename, "Untitled", time))
-	all_music = c_music.execute('''SELECT * FROM music_table ORDER BY timing DESC ;''').fetchall()
-	conn_songs.commit()	
-	conn_songs.close()
-	conn_music.commit()
-	conn_music.close()
+		c_m.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user_name,file_name, "Untitled", time))
+
+	conn_s.commit()	
+	conn_s.close()
+	conn_m.commit()
+	conn_m.close()
 
 def request_handler(request, test = ''):
 	if request['method'] ==  'GET':
 		# user song file path being played
-		user = request["values"].get('user',{})
-		if user == {}:
+		user_name = request["values"].get('user',{})
+		if user_name == {}:
 			return "Must include user in query parameter!"
-		#return user
 
-		conn_music = sqlite3.connect(music_db)
-		c_music = conn_music.cursor() 
+		conn_m = sqlite3.connect(music_db)
+		c_m = conn_m.cursor() 
 
-		all_music = c_music.execute('''SELECT filename, name FROM music_table where user = ? ORDER BY timing DESC ;''', (user,)).fetchall()
+		user_songs = c_m.execute('''SELECT filename, name FROM music_table where user = ? ORDER BY timing DESC ;''', (user_name,)).fetchall()
 
-		if all_music is None:
+		if user_songs is None:
 			return "No song files have been stored"
 
-		songs = []
+		html_response = []
 		# returns list in the form of [name, bytestring, name, bytestring] for every song in all_music 
-		for song in all_music: 
-			filename = song[0]
-			name = song[1]
-			song = open(get_file_path(filename), 'rb')
-			songs.append(name)
-			b64_encoded = base64.encodebytes(song.read())
-			songs.append(b64_encoded.decode("utf-8"))
+		for file_name, title in user_songs: 
+			html_response.append(title)
+			with open(get_file_path(file_name), 'rb') as song: 
+				b64_encoded = base64.encodebytes(song.read())
+				html_response.append(b64_encoded.decode("utf-8"))
+				song.close()
 
-		conn_music.commit()
-		conn_music.close()
+		conn_m.commit()
+		conn_m.close()
 
-		return json.dumps(songs)
+		return json.dumps(html_response)
 	else:
 		args = request['form']
 		# checks if this request is for changing the name 
-		change_name = args.get('edit', {})
+		titles = args.get('edit', {})
 		# we need to change the name 
-		if change_name != {}:
-			user = args['user']
-			new_names = change_name.split(',')
-			conn_music = sqlite3.connect(music_db)
-			c_music = conn_music.cursor() 
-			user_music = c_music.execute("""SELECT * FROM music_table WHERE user = ? ORDER BY timing DESC """,(user,)).fetchall()
-			c_music.execute("""DELETE FROM music_table WHERE user = ? """, (user,))
-			for i in range(len(user_music)):
-				filename = user_music[i][1]
-				time = user_music[i][3]
-				name = new_names[i]
-				c_music.execute("""INSERT into music_table VALUES (?,?,?,?);""", (user, filename, name, time))
-			lol = c_music.execute("""SELECT * from music_table WHERE user = ? """, (user,)).fetchall()
-			conn_music.commit()
-			conn_music.close()
+		if titles != {}:
+			user_name = args['user']
+			new_titles = titles.split(',')
+
+			conn_m  = sqlite3.connect(music_db)
+			c_m = conn_m.cursor() 
+			user_songs = c_m.execute("""SELECT * FROM music_table WHERE user = ? ORDER BY timing DESC """,(user_name,)).fetchall()
+			c_m.execute("""DELETE FROM music_table WHERE user = ? """, (user_name,))
+			for ind in range(len(user_songs)):
+				file_name = user_songs[ind][1]
+				time = user_songs[ind][3]
+				title = new_titles[ind]
+				c_m.execute("""INSERT into music_table VALUES (?,?,?,?);""", (user_name, file_name, title, time))
+			conn_m.commit()
+			conn_m.close()
 		else:
-			song_sequence = args['song']
-			user = args['user1']
+			song_seq = args['song']
+			user_name = args['user1']
 			instrument = args['instrument'] #guitar/bass/piano
 			title = args.get('title','Untitled')
 
@@ -120,77 +130,70 @@ def request_handler(request, test = ''):
 				return "This instrument is not supported."
 
 			option = args['option'] #add/start/[overlay,user]
-			song_file = string_to_file(song_sequence,instrument)
+			song_file = string_to_file(song_seq,instrument)
 
 			if option == 'START':
-				startSong(user,song_file,title)
+				startSong(user_name,song_file,title)
 				return "Song added to the database!"
 			elif option == 'ADD':
-				addSong(user,song_file,title)
+				addSong(user_name,song_file,title)
 				return "Song added to the database!"
 			elif option ==  'OVERLAY':
-				user2 = args['user2']
-				overlaySong(user,user2,song_file,title)
+				user_2 = args['user2']
+				overlaySong(user_name,user_2,song_file,title)
 				return "Song added to the database!"
 			else:
 				return "{} is not a supported option.".format(option)
 
+def get_file_path(file_name):
+	return "__HOME__/{}".format(file_name)
 
-def get_file_path(filename):
-	return "__HOME__/{}".format(filename)
-
-def startSong(user,song_file,title):
+def startSong(user_name,song_file,title):
 	# POST request from ESP32 
-	filename = "song_{}.wav".format(str(time.time()))
+	file_name = "song_{}.wav".format(str(time.time()))
+	file_path = "/var/jail/home/team091/{}".format(file_name)
+	song_file.export(file_path, format="wav")
 
-	filepath = "/var/jail/home/team091/{}".format(filename)
-	song_file.export(filepath, format="wav")
+	conn_m = sqlite3.connect(music_db)
+	c_m = conn_m.cursor()
+	c_m.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user_name, file_name, title, datetime.datetime.now()))
+	conn_m.commit()  # commit commands
+	conn_m.close()  # close connection to database
 
-	conn = sqlite3.connect(music_db)
-	c = conn.cursor()
-	c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,filename, title, datetime.datetime.now()))
-	conn.commit()  # commit commands
-	conn.close()  # close connection to database
+def addSong(user_name,song_file,title):
+	file_name = "song_{}.wav".format(str(time.time()))
+	file_path = "/var/jail/home/team091/{}".format(file_name)
 
-def addSong(user,song_file,title):
-	song_name = "song_{}.wav".format(str(time.time()))
-	filepath = "/var/jail/home/team091/{}".format(song_name)
+	conn_m = sqlite3.connect(music_db)
+	c_m = conn_m.cursor()
+	recent_file = c_m.execute('''SELECT filename FROM music_table WHERE user = ? ORDER BY timing DESC ;''',(user_name,)).fetchone()
 
-	conn = sqlite3.connect(music_db)
-	c = conn.cursor()
-
-	filename = c.execute('''SELECT filename FROM music_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
-
-	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
-		startSong(user,song_file)
+	if recent_file is None: #the user is can't add current sequence to empty db, create a new file instead
+		startSong(user_name,song_file)
 		return "Your database is EMPTY! New song file created for add sequence only"
 	else:
-	
-		user_song_path = "__HOME__/{}".format(filename[0])
+		user_song_path = "__HOME__/{}".format(recent_file[0])
 		old_song = AudioSegment.from_wav(user_song_path)
 		add_song = old_song + song_file
-		add_song.export(filepath,format="wav")
+		add_song.export(file_path,format="wav")
+		c_m.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user_name,file_name, title, datetime.datetime.now()))
+	conn_m.commit()
+	conn_m.close()
 
-		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,song_name, title, datetime.datetime.now()))
+def overlaySong(user_1,user_2,song_file,title):
+	file_name = "song_{}.wav".format(str(time.time()))
+	filepath = "/var/jail/home/team091/{}".format(file_name)
 
-	conn.commit()
-	conn.close()
+	conn_m = sqlite3.connect(music_db)
+	c_m = conn_m.cursor()
 
-def overlaySong(user1,user2,song_file,title):
-	song_name = "song_{}.wav".format(str(time.time()))
-	filepath = "/var/jail/home/team091/{}".format(song_name)
+	recent_file = c_m.execute('''SELECT filename FROM music_table WHERE user = ? ORDER BY timing DESC ;''',(user_2,)).fetchone()
 
-	conn = sqlite3.connect(music_db)
-	c = conn.cursor()
-
-	filename = c.execute('''SELECT filename FROM music_table WHERE user = ? ORDER BY timing DESC ;''',(user2,)).fetchone()
-
-	if filename is None: #the user is can't add current sequence to empty db, create a new file instead
-		return "{} does not exist!".format(user2)
+	if recent_file is None: #the user is can't add current sequence to empty db, create a new file instead
+		return "{} does not exist!".format(user_2)
 	else:
-		user_song_path = "__HOME__/{}".format(filename[0])
+		user_song_path = "__HOME__/{}".format(recent_file[0])
 		user2_song = AudioSegment.from_wav(user_song_path)
-
 		#prevent song truncation!
 		song1_len = len(song_file)
 		song2_len = len(user2_song)
@@ -201,21 +204,17 @@ def overlaySong(user1,user2,song_file,title):
 				song_file += AudioSegment.silent(duration=longer-shorter) #add silence to shorter song to equalize length!
 			else:
 				user2_song += AudioSegment.silent(duration=longer-shorter)
-
 		#overlay songs!
 		overlay_song = song_file.overlay(user2_song)
 		overlay_song.export(filepath,format="wav")
 		#save to user1 db!
-		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user1,song_name, title, datetime.datetime.now()))
+		c_m.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user_1,file_name, title, datetime.datetime.now()))
+	conn_m.commit()
+	conn_m.close()
 
-
-	conn.commit()
-	conn.close()
-
-
-def string_to_file(req,instrument):
+def string_to_file(song_seq,instrument):
 	"""
-	:param req: str in the form of notetime&notetime&notetime
+	:param song_seq: str in the form of notetime&notetime&notetime
 	
 	Things to note: 
 		- notetime : the note is being playing for duration of time
@@ -225,9 +224,9 @@ def string_to_file(req,instrument):
 	Returns an AudioSegment object 
 	"""
 	# initializes a zero duration Audio Segment 
-	user_sound = AudioSegment.empty()
+	song_file = AudioSegment.empty()
 	# list of lists in the form of [[note,time], [note,time],[note,time]]
-	notes_times = [ pair.split(",") for pair in req.split('$')]
+	notes_times = [pair.split(",") for pair in song_seq.split('$')]
 
 	for nt in notes_times:
 		note = nt[0]
@@ -235,13 +234,11 @@ def string_to_file(req,instrument):
 			time = float(nt[1])
 			if note == 'S':
 				# how to add silence: time parameter is in milliseconds
-				user_sound+= AudioSegment.silent(time)
+				song_file += AudioSegment.silent(time)
 			else: 
 				file_path = "__HOME__/note_lib/{}_{}_note.wav".format(instrument,note)
-				user_sound += AudioSegment.from_wav(file_path)[:time]
-
-	return user_sound
-
+				song_file += AudioSegment.from_wav(file_path)[:time]
+	return song_file
 
 if __name__ == "__main__":
 	##  Test numeric samples ##
