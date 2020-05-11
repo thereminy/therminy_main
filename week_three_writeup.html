@@ -1,0 +1,741 @@
+<meta charset="utf-8" emacsmode="-*- markdown -*-"> <link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/journal.css?">
+
+  **6.08 Team 91 Week 3 Writeup**
+
+  # Milestones
+
+  Below is how we completed each of our goals: 
+
+  ##  Milestone 1: Have a working prototype for one user
+
+  **Goal:** 
+
+  * Have a working prototype for one user
+
+  **Deliverable:**
+
+  * A video of a single user should be able to create a sequence of note-durations using the ESP32, POST it to the server, and hear it on the frontend.
+
+     1) User inputs note-duration sequence on ESP32 and POSTs to the server 
+
+     2) The server parses the POST request and stores it in  a database 
+
+     3) The user can input their username on the frontend to get the last song that they created
+
+
+  ![Full demonstration of our fully functional system working!](https://youtu.be/aeuD-mNys4g)
+
+  ![Full demonstration of our fully functional system working!](https://www.youtube.com/watch?v=Or4fY0EGGY4&feature=youtu.be&fbclid=IwAR1C9NG0bUFmJ7etQQOM6Fm3eHwu3vbB6wjTrmRzu6Y6PiXtMDXt8N9lDYc)
+
+  The video demonstrates the fully functioning hardware complete with four phototransistors and a button that determines the duration of each note. Once the sequence of notes is complete, the user presses another button, sending the data and the corresponding username in a POST request to be parsed by the server code. Once the data string is parsed by the server, it is stored in the database with the user that sent it. On the front end, the user can input the username that they sent the song with to retrieve the sound file. Once the file is retrieved, the user can play their song and jam out to their sick beatz!
+
+  ## Milestone 2 : Construct the Hardware
+
+  **Goal:**
+
+  * Construct a sequence of different notes with varying durations
+
+  **Deliverable:**
+
+  * Use the additional two breadboards to connect the 4 Phototransistors and set up the Buttons in the original 6.08 breadboard. Make sure that the measure of the 4 Phototransistors and the Buttons are being read. We will be showing an image of the built device. Explain why we changed from using IMU to using Buttons for the note duration.
+
+
+  Hardware component: 
+
+  <iframe src="https://drive.google.com/file/d/1PP9ZoQrXlREPqLuj1bV-km99gKpHbVFy/preview" width="640" height="480"></iframe>
+
+  We decided to change the IMU to the button implementation because of these reasons. 
+
+    1. Using the IMU to determine the duration of a note would involve the user having to grab the device and shake it. This means that they won't be able to have a concrete sense of how long they should wait in between shakes to select the note duration they actually want (which could lead to frequent errors that they would want to delete).
+
+    2. Using a button to determine the note duration, we could use the TFT to display the current note duration and make sure that the user is inputting the actual length of the note (hence, less mistakes).  
+
+    3. The device is a lot more compact, considering that with the button implementation we can leave the phototransistors’ breadboard attached to the original breadboard. However, with the IMU implementation, the breadboard with the phototransistors will have to be detached in order for the user to shake it and select a note.
+
+  We built the device and made sure that each component (4 Phototransistors and 2 buttons) are correctly connected to the device. One of the buttons is tasked with determining the duration of a note while the other is tasked with sending the sequence of note-duration pairs to the server.
+
+
+  ## Milestone 3: POST from the ESP32
+
+  **Goal:**
+
+  *  Set up the POST request and the sequence of notes
+
+  **Deliverable:**
+
+  * Finish implementing the code that takes the measures of 4 Phototransistors and the buttons (previously, we were only working with 1 Phototransistor). With this, we will be "recording" an example song with the device and displaying the string with an accompanied plot. Also, a POST request with the song sequence will be sent to the server.
+
+  Since we decided to use buttons to implement the selection of the note duration, we modified our code in the following way. First, the user must place their hand over one of the phototransistors to select a note. Once they have chosen their desired note, they will press and hold the leftmost button by an amount of time that correlates to their desired note duration. For example, a short press of the button would be equivalent to a quarter note (250ms) while the longest-hold would be equivalent to a whole note (1000ms). When the button is released, the note-duration pair is added to the sequence of notes that will be sent to the server. If the user has finished writing their sequence of notes, then they have to click the rightmost button in order to send the sequence to the server. These implementations can be seen in the video of Milestone 1. 
+
+  For next week, we will be implementing the following features:
+
+    1. Users can send multiple sequences of notes without having to re-upload the code.
+
+    2. Users can create their username in the beginning of the program.
+
+    3. Users can delete the most recent note-duration pair they added to the sequence. 
+
+    4. The TFT shows the current note-duration pair.
+
+  ## Milestone 4: Username Functionality in Server
+
+  **Goal:**
+
+  *  Add username functionality to server
+
+  **Deliverable:**
+
+  *  ESP32 will have a username with the notes for the sound in POST request to the server. The database will store song files along with the user who POSTed it, and users can input their username onto the frontend to hear the last song that they played
+
+  The original database on the server was modified to take in usernames, and the HTML page was modified to take in a username. It then queries the server database for the most recent entry made by that user, and it uses base64 encoding to play the sound on the frontend.
+
+  The webpage now has an input text field so that the user can input their name before they click on the button which sends the GET request to the server. The GET request now has a ‘user’ field which is sent to the server to get the audio source back. 
+
+  # Code Appendix
+
+  HTML/JavaScript with added username input:
+
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <title>Theremin-y</title>
+      <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <main>
+            <h1>Theremin-y</h1>
+            <audio id="sound" src="" type="audio/wav" controls></audio>
+            <input id="user" type="text" name="username" placeholder="Username" required>
+            <button onclick="updateAudio()">Get Sound</button>
+        </main>
+        <script>
+            function updateAudio() {
+                let request = new XMLHttpRequest();
+                let user = document.getElementById("user").value;
+         if (user === "") {
+                    alert("Please fill out a username");
+                } else {
+                    request.open('GET','server.py?user=' + user);
+                    request.responseType = 'text';
+            
+                    request.onload = function() {
+                        getSound(request.response);
+            
+                    };
+                    request.send();
+                    }
+            };
+        
+            function getSound(base64_decoded) {
+                document.getElementById('sound').setAttribute('src', 'data:audio/wav;base64, ' + base64_decoded);
+            }
+        
+          </script>
+    </body>
+    </html>
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Server Code:
+
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  songs_db = '__HOME__/songs.db'
+  # songs_db = "songs.db"
+   
+   
+  current_notes = {'A','B','C','D','E','F','G'}
+   
+   
+   
+  def create_database():
+      conn = sqlite3.connect(songs_db)  # connect to that database (will create if it doesn't already exist)
+      c = conn.cursor()  # move cursor into database (allows us to execute commands)
+      c.execute('''CREATE TABLE song_table (user text, filename text,timing timestamp );''') # run a CREATE TABLE command
+      conn.commit() # commit commands
+      conn.close() # close connection to database
+   
+   
+  def request_handler(request, test = ''):
+      if request['method'] ==  'GET':
+          # user song file path being played
+          user = request["values"]['user']
+   
+          conn = sqlite3.connect(songs_db)
+          c = conn.cursor()
+   
+          filename = c.execute('''SELECT filename FROM song_table WHERE user = ? ORDER BY timing DESC ;''',(user,)).fetchone()
+   
+          if filename is None:
+              return "No song files have been stored"
+          
+          user_song_path = "__HOME__/{}".format(filename[0])
+   
+          conn.commit()
+          conn.close()
+   
+          song = open(user_song_path, 'rb')
+          b64_encoded= base64.encodebytes(song.read()) #read image and encode it into base64
+          return b64_encoded.decode("utf-8")
+      else:
+         args = request['form']
+          song_sequence = args['song']
+          user = args['user']
+   
+          # POST request from ESP32 
+          new_song_file = string_to_file(song_sequence)
+          
+          filename = "song_{}.wav".format(str(time.time()))
+          #new_song_file.export(filename, format="wav")
+          
+          filepath = "/var/jail/home/team091/{}".format(filename)
+          new_song_file.export(filepath, format="wav")
+   
+          conn = sqlite3.connect(songs_db)
+          c = conn.cursor()
+          c.execute('''INSERT into song_table VALUES (?,?,?);''', (user,filename, datetime.datetime.now()))
+          conn.commit()  # commit commands
+          conn.close()  # close connection to database
+   
+          return "Song added to the database!"
+   
+   
+  def string_to_file(req):
+      """
+      :param req: str in the form of notetime&notetime&notetime
+      
+      Things to note: 
+          - notetime : the note is being playing for duration of time
+          - 'S' represents silence
+          - time is in milliseconds
+   
+      Returns an AudioSegment object 
+      """
+      # initializes a zero duration Audio Segment 
+      user_sound = AudioSegment.empty()
+      # list of lists in the form of [[note,time], [note,time],[note,time]]
+     notes_times = [ pair.split(",") for pair in req.split('$')]
+   
+      for nt in notes_times:
+          note = nt[0]
+          if note != "":
+              time = float(nt[1])
+              print("t:",time)
+              if note == 'S':
+                  # how to add silence: time parameter is in milliseconds
+                  user_sound+= AudioSegment.silent(time)
+              else: 
+                  file_path = "__HOME__/note_lib/{}_note.wav".format(note)
+                  user_sound += AudioSegment.from_wav(file_path)[:time]
+   
+      return user_sound
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  Arduino code for Note Duration:
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   //Phototransistor Class
+  class Phototransistor{
+    public:
+      uint32_t final_trigger;
+      uint32_t initial_trigger;
+      float region1, region2, region3;
+      float average;
+      uint16_t max_measure, counter;
+      char note[10];
+      char prev_note[10];
+      char note_r1[10], note_r2[10], note_r3[10];
+      bool hand_present;
+     
+      Phototransistor(char* note1, char* note2, char* note3) {
+        final_trigger = millis();
+        initial_trigger = millis();
+
+        hand_present = false;
+
+        //These will be set later
+        region1 = 0;
+        region2 = 0;
+        region3 = 0;
+        average = 0;
+        max_measure = 0;
+        counter = 0;
+
+        //Notes the PT is measuring
+        memset(note, 0, sizeof(note));
+        memset(prev_note, 0, sizeof(prev_note));
+        strcpy(note_r1,  note1);
+        strcpy(note_r2,  note2);
+        strcpy(note_r3,  note3);
+      }
+
+    //Calculating average
+    void set_average(uint16_t sample){
+      counter ++;
+      average = (average*(counter-1)+sample)/counter;
+    }
+
+    //Calculating max
+    void set_max(uint16_t sample){
+      if (sample > max_measure){
+            max_measure = sample;
+      }
+    }
+    
+    //Once regions have been calculated, set them
+    void set_regions(){
+      region1 = (max_measure - 4095)/32 + 4095;
+      region2 = 5*(max_measure - 4095)/16 + 4095;
+      region3 = 15*(max_measure - 4095)/16 + 4095;
+    }
+    
+    //Determine which distance from the three levels
+    void read(uint16_t sample) { 
+      memset(prev_note, 0, sizeof(prev_note));
+      strcpy(prev_note, note);
+      memset(note, 0, sizeof(note));
+      
+      if (sample >= region1){
+        strcpy(note, note_r1);
+        hand_present = true;
+      }
+      else if (sample >= region2){
+        strcpy(note, note_r2);
+        hand_present = true;
+      }
+      else if(sample >= region3){
+        strcpy(note, note_r3);
+        hand_present = true;
+      }
+      else{
+        hand_present = false;
+      }
+    }
+  };
+
+  class ButtonNote {
+    public:
+      uint32_t t_of_state_2;
+      uint32_t t_of_button_change;
+      uint32_t debounce_time;
+      uint32_t whole_note_time;
+      uint32_t threequarters_note_time;
+      uint32_t half_note_time;
+      uint8_t pin;
+      uint8_t flag;
+      bool button_pressed;
+      uint8_t state_b; // This is public for the sake of convenience
+      
+      ButtonNote(int p) {
+        flag = 0;
+        state_b = 0;
+        pin = p;
+        t_of_state_2 = millis(); //init
+        t_of_button_change = millis(); //init
+        debounce_time = 10;
+        whole_note_time = 750;
+        threequarters_note_time = 500;
+        half_note_time = 250;
+        button_pressed = 0;
+      }
+      void read() {
+        uint8_t button_state = digitalRead(pin);
+        button_pressed = !button_state;
+      }
+      int update() {
+        read();
+        flag = 0;
+        if (state_b == 0) {
+          if (button_pressed) {
+            state_b = 1;
+            t_of_button_change = millis();
+          }
+        } else if (state_b == 1) {
+          if (!button_pressed) {
+            state_b = 0;
+            t_of_button_change = millis();
+          } else if (button_pressed and millis() - t_of_button_change >= debounce_time) {
+            state_b = 2;
+            t_of_state_2 = millis();
+          }
+        } else if (state_b == 2) {
+          if (!button_pressed) {
+            state_b = 3;
+            t_of_button_change = millis();
+          }
+        } else if (state_b == 3) {
+          if (button_pressed) {
+            state_b = 2;
+            t_of_button_change = millis();
+          } else if (!button_pressed and millis() - t_of_button_change >= debounce_time) {
+            state_b = 0;
+            if (millis() - t_of_state_2 >= whole_note_time) {
+              flag = 4;
+            } else if (millis() - t_of_state_2 >= threequarters_note_time){
+              flag = 3;
+            } else if (millis() - t_of_state_2 >= half_note_time){
+              flag = 2;
+            } else {
+              flag = 1;
+            }
+          }
+        }
+        return flag;
+      }
+  };
+
+  class ButtonControl {
+    public:
+      uint32_t t_of_state_2;
+      uint32_t t_of_button_change;
+      uint32_t debounce_time;
+      uint8_t pin;
+      uint8_t flag;
+      bool button_pressed;
+      uint8_t state_b; // This is public for the sake of convenience
+      
+      ButtonControl(int p) {
+        flag = 0;
+        state_b = 0;
+        pin = p;
+        t_of_state_2 = millis(); //init
+        t_of_button_change = millis(); //init
+        debounce_time = 10;
+        button_pressed = 0;
+      }
+      void read() {
+        uint8_t button_state = digitalRead(pin);
+        button_pressed = !button_state;
+      }
+      int update() {
+        read();
+        flag = 0;
+        if (state_b == 0) {
+          if (button_pressed) {
+            state_b = 1;
+            t_of_button_change = millis();
+          }
+        } else if (state_b == 1) {
+          if (!button_pressed) {
+            state_b = 0;
+            t_of_button_change = millis();
+          } else if (button_pressed and millis() - t_of_button_change >= debounce_time) {
+            state_b = 2;
+            t_of_state_2 = millis();
+          }
+        } else if (state_b == 2) {
+          if (!button_pressed) {
+            state_b = 3;
+            t_of_button_change = millis();
+          }
+        } else if (state_b == 3) {
+          if (button_pressed) {
+            state_b = 2;
+            t_of_button_change = millis();
+          } else if (!button_pressed and millis() - t_of_button_change >= debounce_time) {
+            state_b = 0;
+            flag = 1;
+          }
+        }
+        return flag;
+      }
+  };
+
+
+  //Initialize the buttons
+  ButtonNote button1(BUTTON_PIN1);
+  ButtonControl button2(BUTTON_PIN2);
+
+  //Initialize the sensors
+  Phototransistor sensor1("C", "C#", "D");
+  Phototransistor sensor2("D#", "E", "F");
+  Phototransistor sensor3("F#", "G", "G#");
+  Phototransistor sensor4("A", "A#", "B");
+
+
+  void setup() {
+    Serial.begin(115200);
+    //**************************************WIFI CONNECTION*********************************************
+    WiFi.begin(network, password); 
+    Serial.print("Attempting to connect to ");
+    Serial.println(network);
+    
+    uint8_t count = 0; //count used for Wifi check times
+    while (WiFi.status() != WL_CONNECTED && count < 12) {
+      delay(500);
+      Serial.print(".");
+      count++;
+    }
+    delay(2000);
+    if (WiFi.isConnected()) { //if we connected then print our IP, Mac, and SSID we're on
+      Serial.println("CONNECTED!");
+      Serial.println(WiFi.localIP().toString() + " (" + WiFi.macAddress() + ") (" + WiFi.SSID() + ")");
+      delay(500);
+    } else { //if we failed to connect just Try again.
+      Serial.println("Failed to Connect :/  Going to restart");
+      Serial.println(WiFi.status());
+      ESP.restart(); // restart the ESP (proper way)
+    }
+    //***************************************IMU CONNECTION*********************************************
+    delay(50); //pause to make sure comms get set up
+    Serial.println("Trying to connect IMU");
+    Wire.begin();
+    delay(50); //pause to make sure comms get set up
+    if (imu.setupIMU(1)){
+      Serial.println("IMU Connected!");
+    }else{
+      Serial.println("IMU Not Connected :/");
+      Serial.println("Restarting");
+      ESP.restart(); // restart the ESP (proper way)
+    }
+    //***************************************I************************************************************
+    
+    tft.init();
+    tft.setRotation(2);
+    tft.setTextSize(1);
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_BLACK, TFT_WHITE); 
+    pinMode(BUTTON_PIN1, INPUT_PULLUP);
+    pinMode(BUTTON_PIN2, INPUT_PULLUP);
+   
+    state = NORMALIZE;
+    new_timer = millis();
+    timer = millis();
+    timer_sample = millis();
+
+    average = 0;
+    
+    measured = false;
+    changed1 = false;
+    changed2 = false;
+    done_notes = false; 
+    send_notes = false;
+    ended = false;
+  }
+
+  void loop() {
+    measure1 = analogRead(A5);
+    measure2 = analogRead(A4);
+    measure3 = analogRead(A6);
+    measure4 = analogRead(A0);
+    
+    
+    //Serial.println(analogRead(A5));
+    //Serial.println(analogRead(A4));
+    //Serial.println(analogRead(A6));
+    //Serial.println(analogRead(A0));
+    //Serial.println("____________________________");
+
+    if (!done_notes){
+        SetNotes(); //currently just Serial.prints it
+    }
+    
+    else if(!send_notes){
+      sensor1.read(measure1); 
+      sensor2.read(measure2);
+      sensor3.read(measure3);
+      sensor4.read(measure4);
+      SelectNote();
+      
+      flag1 = button1.update();
+      flag2 = button2.update();
+
+      if (button1.state_b == 3){ //Show the current duration of the note
+        if (millis() - button1.t_of_state_2 >= button1.whole_note_time) {
+          displayMessage("Whole note", message, 0);
+        } else if (millis() - button1.t_of_state_2 >= button1.threequarters_note_time){
+          displayMessage("Threequarter note", message, 0);
+        } else if (millis() - button1.t_of_state_2 >= button1.half_note_time){
+          displayMessage("Half note", message, 0);
+        } else {
+          displayMessage("Quarter note", message, 0);
+        }
+            
+      }
+      
+      if (flag1 != 0){
+        writeNote(1000*flag1/4);
+        
+        Serial.println(1000*flag1/4);
+        Serial.println(selected_note);
+      }
+
+      if (flag2 == 1){
+        send_notes = true;
+      }
+    }
+    else if (!ended){
+      SendNotes();
+      ended = true;
+    }
+  //  else{
+  //    Serial.println("d");
+  //  }
+    
+    while (millis()- new_timer < 50);
+    new_timer = millis();
+
+  }
+
+  void displayMessage(char* in_message, char* out_message, int interval){
+    memset(out_message, 0, sizeof(out_message));
+    sprintf(out_message, in_message);
+    tft.fillScreen(TFT_WHITE);
+    tft.setCursor(30, 70, 1); 
+    tft.setTextColor(TFT_BLACK);
+    tft.println(out_message);
+  }
+
+
+  void SetNotes(){
+    switch(state){
+      //Takes care of calculating average and max for each Phototransistor
+      case NORMALIZE: 
+        //Prepare to take ambient light
+        if (millis() - timer <= 4000){ 
+          if(!changed1){
+            displayMessage("Gathering light", message, 0);
+            changed1 = true;
+            changed2 = false;
+          }
+        }
+        
+        //After 4 seconds, start calculating max difference
+        else {
+          //Calculate average (just in case)
+          sensor1.set_average(measure1);
+          sensor2.set_average(measure2);
+          sensor3.set_average(measure3);
+          sensor4.set_average(measure4);
+
+          //Calculate max during ambient light
+          sensor1.set_max(measure1);
+          sensor2.set_max(measure2);
+          sensor3.set_max(measure3);
+          sensor4.set_max(measure4);
+          
+          //TFT show what is happening
+          if(!changed2){
+            displayMessage("...", message, 0);
+            changed1 = false;
+            changed2 = true;
+          }
+
+          //After 10 seconds, move to another state
+          if(millis() - timer > 10000){
+            state = GOING;
+            
+            //Resetting variables for next state
+            timer = millis(); 
+            
+            //Printing results
+            Serial.println("Finished uncovered! The average:");
+            Serial.println(sensor1.average);
+            Serial.println(sensor2.average);
+            Serial.println(sensor3.average);
+            Serial.println(sensor4.average);
+            
+            Serial.println("This is the max during uncovered:");
+            Serial.println(sensor1.max_measure);
+            Serial.println(sensor2.max_measure);
+            Serial.println(sensor3.max_measure);
+            Serial.println(sensor4.max_measure);
+          }
+        }
+        break;
+
+      //Determine thresholds!
+      case GOING: 
+        state = STOP;
+        sensor1.set_regions(); 
+        sensor2.set_regions(); 
+        sensor3.set_regions(); 
+        sensor4.set_regions(); 
+        
+        done_notes = true;
+        break;
+      
+
+      case STOP:
+        break;
+    }
+  }
+  void SelectNote(){
+    memset(selected_note, 0, sizeof(selected_note));
+    if (measure1 > measure2 && measure1 > measure3 && measure1 > measure4){
+      strcpy(selected_note, sensor1.note);
+    }
+    else if(measure2 > measure1 && measure2 > measure3 && measure2 > measure4){
+      strcpy(selected_note, sensor2.note);
+    }
+    else if(measure3 > measure1 && measure3 > measure2 && measure3 > measure4){
+      strcpy(selected_note, sensor3.note);
+    }
+    else if(measure4 > measure1 && measure4 > measure2 && measure4 > measure3){
+      strcpy(selected_note, sensor4.note);
+    }
+
+    displayMessage(selected_note, message, 0);
+    
+    //Serial.println("This is the note");
+    //Serial.println(selected_note);
+    
+  }
+
+  void writeNote(int note_duration){
+    if (strlen(sample_string) < SAMPLE_SIZE - 50){               
+        sprintf(sample_string+strlen(sample_string),"%s,%d$",selected_note, note_duration); //add information of when the note was played
+        tft.fillScreen(TFT_WHITE);
+        tft.setCursor(40, 70, 1); 
+        tft.setTextColor(TFT_BLACK);
+        sprintf(message, "%s", sensor1.note);
+        tft.println(message);
+    }
+  }
+
+
+
+  void ShowNotes(){
+    memset(message, 0, sizeof(message));
+    Serial.println(measure1);
+    Serial.println(sensor1.note);
+
+    if (strlen(sample_string) < SAMPLE_SIZE - 50){
+      sprintf(sample_string+strlen(sample_string),"%d&",measure1);
+    }
+    else{
+      Serial.println(sensor1.region1);
+      Serial.println(sensor1.region2);
+      Serial.println(sensor1.region3);
+      Serial.println(sample_string);
+    }
+    
+    if(sensor1.prev_note!= sensor1.note){
+      tft.fillScreen(TFT_WHITE);
+      tft.setCursor(30, 70, 1); 
+      tft.setTextColor(TFT_BLACK);
+      sprintf(message, "%s", sensor1.note);
+     }
+  }
+
+  void SendNotes(){
+    memset(body, 0, 2000);
+    sprintf(body,"user=%s&song=%s", USER, sample_string);
+    body_len = strlen(body);
+    sprintf(request_buffer,"POST /sandbox/sc/team091/server.py HTTP/1.1\r\n");
+    strcat(request_buffer,"Host: 608dev-2.net\r\n");
+    strcat(request_buffer,"Content-Type: application/x-www-form-urlencoded\r\n");
+    sprintf(request_buffer+strlen(request_buffer),"Content-Length: %d\r\n", body_len); 
+    strcat(request_buffer,"\r\n"); 
+    strcat(request_buffer,body); 
+    strcat(request_buffer,"\r\n"); 
+        
+    do_http_request("608dev-2.net", request_buffer, response_buffer, OUT_BUFFER_SIZE, RESPONSE_TIMEOUT,true);
+    Serial.println(response_buffer); 
+        
+  }
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+<style class="fallback">body{visibility:hidden}</style><script>markdeepOptions={tocStyle:'auto'};</script>
+<!-- Markdeep: --><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?" charset="utf-8"></script>
