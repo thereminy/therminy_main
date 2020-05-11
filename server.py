@@ -114,6 +114,7 @@ def request_handler(request, test = ''):
 			song_sequence = args['song']
 			user = args['user1']
 			instrument = args['instrument'] #guitar/bass/piano
+			title = args.get('title','Untitled')
 
 			if instrument not in instruments:
 				return "This instrument is not supported."
@@ -122,14 +123,14 @@ def request_handler(request, test = ''):
 			song_file = string_to_file(song_sequence,instrument)
 
 			if option == 'START':
-				startSong(user,song_file)
+				startSong(user,song_file,title)
 				return "Song added to the database!"
 			elif option == 'ADD':
-				addSong(user,song_file)
+				addSong(user,song_file,title)
 				return "Song added to the database!"
 			elif option ==  'OVERLAY':
 				user2 = args['user2']
-				overlaySong(user,user2,song_file)
+				overlaySong(user,user2,song_file,title)
 				return "Song added to the database!"
 			else:
 				return "{} is not a supported option.".format(option)
@@ -138,7 +139,7 @@ def request_handler(request, test = ''):
 def get_file_path(filename):
 	return "__HOME__/{}".format(filename)
 
-def startSong(user,song_file):
+def startSong(user,song_file,title):
 	# POST request from ESP32 
 	filename = "song_{}.wav".format(str(time.time()))
 
@@ -147,11 +148,11 @@ def startSong(user,song_file):
 
 	conn = sqlite3.connect(music_db)
 	c = conn.cursor()
-	c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,filename, "Untitled", datetime.datetime.now()))
+	c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,filename, title, datetime.datetime.now()))
 	conn.commit()  # commit commands
 	conn.close()  # close connection to database
 
-def addSong(user,song_file):
+def addSong(user,song_file,title):
 	song_name = "song_{}.wav".format(str(time.time()))
 	filepath = "/var/jail/home/team091/{}".format(song_name)
 
@@ -170,12 +171,12 @@ def addSong(user,song_file):
 		add_song = old_song + song_file
 		add_song.export(filepath,format="wav")
 
-		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,song_name, "Untitled", datetime.datetime.now()))
+		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user,song_name, title, datetime.datetime.now()))
 
 	conn.commit()
 	conn.close()
 
-def overlaySong(user1,user2,song_file):
+def overlaySong(user1,user2,song_file,title):
 	song_name = "song_{}.wav".format(str(time.time()))
 	filepath = "/var/jail/home/team091/{}".format(song_name)
 
@@ -205,7 +206,7 @@ def overlaySong(user1,user2,song_file):
 		overlay_song = song_file.overlay(user2_song)
 		overlay_song.export(filepath,format="wav")
 		#save to user1 db!
-		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user1,song_name, "Untitled", datetime.datetime.now()))
+		c.execute('''INSERT into music_table VALUES (?,?,?,?);''', (user1,song_name, title, datetime.datetime.now()))
 
 
 	conn.commit()
