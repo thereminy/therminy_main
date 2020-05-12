@@ -236,55 +236,14 @@ def string_to_file(song_seq,instrument):
 				# how to add silence: time parameter is in milliseconds
 				song_file += AudioSegment.silent(time)
 			else: 
-				file_path = "__HOME__/note_lib/{}_{}_note.wav".format(instrument,note)
+				if note[1] == ' ':
+					file_path = "__HOME__/note_lib/{}_{}_note.wav".format(instrument,note[0])
+				else:
+					file_path = "__HOME__/note_lib/{}_{}_note.wav".format(instrument,note)
 				song_file += AudioSegment.from_wav(file_path)[:time]
 	return song_file
 
 if __name__ == "__main__":
-	##  Test numeric samples ##
 
-	# audio_note, numeric_samples = request_handler({'method':'GET', 'values':{'note':'A'}}, 'arr_samples')
-	# play(audio_note._spawn(numeric_samples))
-
-	## Test byte string ##
-
-	# audio_note, raw_audio_data = request_handler({'method':'GET', 'values':{'note':'A'}},'str_bytes')
-	# play(audio_note._spawn(raw_audio_data))
-
-	## Test byte array ## 
-
-	# audio_file, byte_array = request_handler({'method':'GET', 'values':{'note':'A'}}, "arr_bytes")
-	# song = AudioSegment.from_file(io.BytesIO(byte_array), format="wav")
-	# play(song)
-
-	## Server defaults to byte_array 
-
-	# print(request_handler({'method':'GET', 'values':{'note':'A'}}))
-
-	## To play a parsed string 
-	#play(new_song)
-	#song_open = open(new_song., 'rb') 
-	#b64_encoded= base64.encodebytes(new_song.raw_data) #read image and encode it into base64
-	#print(b64_encoded)
-	# # # how to export 
-	# #new_song.export("user_song.wav", format="wav")
-	# A = AudioSegment.from_file('note_lib/A_note.wav')
-	# B = AudioSegment.from_file('note_lib/B_note.wav')
-	# C = AudioSegment.from_file('note_lib/C_note.wav')
-	# D = AudioSegment.from_file('note_lib/D_note.wav')
-	# E = AudioSegment.from_file('note_lib/E_note.wav')
-	# F = AudioSegment.from_file('note_lib/F_note.wav')
-	# G = AudioSegment.from_file('note_lib/G_note.wav')
-
-
-
-	# GB = G.overlay(B)
-	# GBD = GB.overlay(D)
-	# play(GB)
-
-	# CE = C.overlay(E)
-	# CEG = CE.overlay(G)
-	# play(CE)
-	# play(CEG)
 
 	pass
